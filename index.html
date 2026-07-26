@@ -54,18 +54,18 @@ h1 { text-align: center; font-size: 2.5em; color: #6b35b3; text-shadow: 2px 2px 
 <div class="container">
 
 <h1>🌈 Phonics Fun</h1>
-<p class="subtitle">撳字母聽發音 · 逐個拼讀 · UK男聲讀字 <span style="color:#aaa;font-size:0.65em;">🇬🇧 v8.1</span></p>
+<p class="subtitle">全🇬🇧 Ryan 男聲 · 字母名+讀字 <span style="color:#aaa;font-size:0.65em;">v8.2</span></p>
 
 <!-- Letter Grid -->
 <div class="section">
-  <h2>🔤 字母發音</h2>
+  <h2>🔤 字母 (Ryan 男聲)</h2>
   <div class="letter-grid" id="letterGrid"></div>
   <div class="status" id="letterStatus"></div>
 </div>
 
 <!-- Sequential Phonics -->
 <div class="section">
-  <h2>🔗 逐個拼讀 (Phonics)</h2>
+  <h2>🔗 逐個拼讀 (Ryan 字母名)</h2>
   <div class="phonics-row">
     <input type="text" class="phonics-input" id="phonicsInput" placeholder="輸入詞語, e.g. CAT" maxlength="20">
     <button class="phonics-btn" id="phonicsBtn">🔊 逐個讀</button>
@@ -107,7 +107,7 @@ for (let i = 0; i < 26; i++) {
 
 function playLetter(letter, btn) {
   document.querySelectorAll('.playing').forEach(b => b.classList.remove('playing'));
-  const audio = new Audio(`sounds/${letter.toLowerCase()}.mp3`);
+  const audio = new Audio(`sounds/ryan/${letter.toLowerCase()}.mp3`);
   btn.classList.add('playing');
   letterStatus.textContent = `🔊 ${letter}`;
   audio.play();
@@ -160,7 +160,7 @@ async function playSequential() {
 
 function playPhonic(letter) {
   return new Promise(resolve => {
-    const audio = new Audio(`sounds/${letter.toLowerCase()}.mp3`);
+    const audio = new Audio(`sounds/ryan/${letter.toLowerCase()}.mp3`);
     audio.onended = resolve;
     audio.onerror = resolve;
     audio.play();
