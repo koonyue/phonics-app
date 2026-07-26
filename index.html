@@ -57,7 +57,7 @@ h1 { text-align: center; font-size: 2.5em; color: #6b35b3; text-shadow: 2px 2px 
 <div class="container">
 
 <h1>🌈 Phonics Fun</h1>
-<p class="subtitle">撳字母聽發音 · 輸入詞語學拼讀 <span style="color:#aaa;font-size:0.65em;">🇬🇧 v4.3 (真人錄音 · 無縫拼讀)</span></p>
+<p class="subtitle">撳字母聽發音 · 輸入詞語學拼讀 <span style="color:#aaa;font-size:0.65em;">🇬🇧 v4.4 (真人錄音 · 重複拼讀)</span></p>
 
 <!-- Letter Sounds -->
 <div class="section">
@@ -161,19 +161,23 @@ function trimRange(buf, threshDb = -40) {
   return { start: start / sr, end: end / sr };
 }
 
-// Build one continuous AudioBuffer: trimmed parts, crossfaded, NO stretch
-// (stretch caused issues with SoundTouch library — keep it simple and reliable)
-async function buildBlendBuffer(letters, crossfadeSec = 0.15) {
+// Build one continuous AudioBuffer: each letter repeated N times, crossfaded
+// e.g. c-c-c-a-a-a-t-t-t with natural transitions
+async function buildBlendBuffer(letters, repeats = 3, crossfadeSec = 0.12) {
   const ctx = audioCtx();
   const bufs = await Promise.all(letters.map(l => getBuffer(l)));
 
-  // Trim each buffer, no stretch
-  const parts = bufs.map(b => {
+  // Trim each buffer, then repeat it `repeats` times
+  const parts = [];
+  for (const b of bufs) {
     const t = trimRange(b);
     const s = Math.floor(t.start * b.sampleRate);
     const e = Math.floor(t.end * b.sampleRate);
-    return { data: b.getChannelData(0).slice(s, e), sr: b.sampleRate };
-  });
+    const seg = b.getChannelData(0).slice(s, e);
+    for (let r = 0; r < repeats; r++) {
+      parts.push({ data: seg, sr: b.sampleRate });
+    }
+  }
 
   const sr = ctx.sampleRate;
   const xfadeLen = Math.floor(crossfadeSec * sr);
@@ -331,8 +335,8 @@ blendBtn.addEventListener('click', async () => {
   const blendPromise = playBlend(letters);
   const dur = await (async () => {
     const bufs = await Promise.all(letters.map(l => getBuffer(l)));
-    const parts = bufs.map(b => { const t = trimRange(b); return t.end - t.start; });
-    return parts.reduce((s, d) => s + d, 0) - 0.15 * (letters.length - 1);
+    const parts = bufs.map(b => { const t = trimRange(b); return (t.end - t.start) * 3; });
+    return parts.reduce((s, d) => s + d, 0) - 0.12 * (letters.length * 3 - 1);
   })();
 
   // Animate chips at roughly even intervals
