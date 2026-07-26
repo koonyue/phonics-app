@@ -25,25 +25,26 @@ h1 { text-align: center; font-size: 2.5em; color: #6b35b3; text-shadow: 2px 2px 
 .letter-btn.vowel { background: linear-gradient(145deg, #ffe0f0, #ffd0e0); color: #e84393; }
 .letter-btn.vowel.playing { background: #ffd700; color: #333; }
 
-.input-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.word-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 .word-input { flex: 1; min-width: 180px; padding: 14px 18px; font-size: 1.5em; border: 3px solid #a29bfe; border-radius: 14px; outline: none; text-align: center; text-transform: uppercase; letter-spacing: 2px; }
-.speak-btn { padding: 14px 28px; background: #00b894; color: white; border: none; border-radius: 14px; font-size: 1.2em; font-weight: bold; cursor: pointer; transition: all 0.15s; }
-.speak-btn:hover { background: #00a381; transform: scale(1.05); }
-.speak-btn:active { background: #008966; transform: scale(0.95); }
+.btn-row { display: flex; gap: 10px; flex-wrap: wrap; }
+.phonics-btn { padding: 12px 24px; background: #fd79a8; color: white; border: none; border-radius: 12px; font-size: 1.15em; font-weight: bold; cursor: pointer; transition: all 0.15s; }
+.phonics-btn:hover { background: #e84393; transform: scale(1.05); }
+.read-btn { padding: 12px 24px; background: #00b894; color: white; border: none; border-radius: 12px; font-size: 1.15em; font-weight: bold; cursor: pointer; transition: all 0.15s; }
+.read-btn:hover { background: #00a381; transform: scale(1.05); }
 
 .chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
 .chip { padding: 5px 12px; border-radius: 18px; font-weight: bold; font-size: 1.1em; background: #dfe6e9; color: #636e72; transition: all 0.2s; }
 .chip.active { background: #fd79a8; color: #fff; transform: scale(1.15); }
 
 .status { text-align: center; color: #888; font-size: 0.85em; margin-top: 6px; min-height: 18px; }
-.source-tag { text-align: center; color: #bbb; font-size: 0.7em; }
 </style>
 </head>
 <body>
 <div class="container">
 
 <h1>🌈 Phonics Fun</h1>
-<p class="subtitle">真人字母發音 · 逐個拼讀 · UK男聲讀全字 <span style="color:#aaa;font-size:0.65em;">v9.2</span></p>
+<p class="subtitle">真人字母發音 · 逐個拼讀 · UK男聲全字 <span style="color:#aaa;font-size:0.65em;">v9.3</span></p>
 
 <!-- Letter Grid -->
 <div class="section">
@@ -52,26 +53,18 @@ h1 { text-align: center; font-size: 2.5em; color: #6b35b3; text-shadow: 2px 2px 
   <div class="status" id="letterStatus"></div>
 </div>
 
-<!-- Sequential Phonics -->
+<!-- Word + Two Buttons -->
 <div class="section">
-  <h2>🔗 逐個拼讀 (真人)</h2>
-  <div class="input-row">
-    <input type="text" class="word-input" id="phonicsInput" placeholder="輸入詞語, e.g. CAT" maxlength="20">
-    <button class="speak-btn" id="phonicsBtn" style="background:#fd79a8;">🔊 逐個讀</button>
+  <h2>📖 拼讀練習</h2>
+  <div class="word-row">
+    <input type="text" class="word-input" id="wordInput" placeholder="輸入英文詞語, e.g. CAT" maxlength="20">
+  </div>
+  <div class="btn-row" style="margin-top:10px;">
+    <button class="phonics-btn" id="phonicsBtn">🔊 逐個拼讀</button>
+    <button class="read-btn" id="readBtn">📖 讀全字</button>
   </div>
   <div class="chips" id="chips"></div>
-  <div class="status" id="phonicsStatus"></div>
-</div>
-
-<!-- Whole Word -->
-<div class="section">
-  <h2>📖 讀全字 (系統 UK 男聲)</h2>
-  <div class="input-row">
-    <input type="text" class="word-input" id="wordInput" placeholder="輸入任何英文詞語" maxlength="30">
-    <button class="speak-btn" id="speakBtn">🔊 讀字</button>
-  </div>
   <div class="status" id="wordStatus"></div>
-  <div class="source-tag">Powered by Google Translate TTS (en-GB)</div>
 </div>
 
 </div>
@@ -100,37 +93,43 @@ for (let i = 0; i < 26; i++) {
   letterGrid.appendChild(btn);
 }
 
-// ─── Sequential Phonics ────────────────────────────
-const phonicsInput = document.getElementById('phonicsInput');
+// ─── Shared word input ─────────────────────────────
+const wordInput = document.getElementById('wordInput');
 const phonicsBtn = document.getElementById('phonicsBtn');
+const readBtn = document.getElementById('readBtn');
 const chips = document.getElementById('chips');
-const phonicsStatus = document.getElementById('phonicsStatus');
+const wordStatus = document.getElementById('wordStatus');
 let isPlaying = false;
 
+function getWord() {
+  const w = wordInput.value.trim().toUpperCase();
+  return /^[A-Z]+$/.test(w) ? w : null;
+}
+
+// ─── Sequential Phonics ────────────────────────────
 phonicsBtn.addEventListener('click', playSequential);
-phonicsInput.addEventListener('keydown', e => { if (e.key === 'Enter') playSequential(); });
 
 async function playSequential() {
-  const word = phonicsInput.value.trim().toUpperCase();
-  if (!word || !/^[A-Z]+$/.test(word) || isPlaying) return;
+  const word = getWord();
+  if (!word || isPlaying) return;
   isPlaying = true;
   
   const letters = word.split('');
   chips.innerHTML = letters.map(l => `<span class="chip" data-letter="${l}">${l}</span>`).join('');
-  phonicsStatus.textContent = `🔊 逐個讀: ${word}`;
+  wordStatus.textContent = `🔊 逐個讀: ${word}`;
   
   for (let i = 0; i < letters.length; i++) {
     document.querySelectorAll('.chip').forEach((c, j) => c.classList.toggle('active', j === i));
-    await playSound(letters[i]);
+    await playPhonic(letters[i]);
     await sleep(350);
   }
   
   document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
-  phonicsStatus.textContent = '';
+  wordStatus.textContent = '';
   isPlaying = false;
 }
 
-function playSound(letter) {
+function playPhonic(letter) {
   return new Promise(resolve => {
     const audio = new Audio(`sounds/${letter.toLowerCase()}.mp3`);
     audio.onended = resolve;
@@ -141,15 +140,11 @@ function playSound(letter) {
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
-// ─── Whole Word (Browser Speech API, UK voice priority) ──
-const wordInput = document.getElementById('wordInput');
-const speakBtn = document.getElementById('speakBtn');
-const wordStatus = document.getElementById('wordStatus');
+// ─── Whole Word ────────────────────────────────────
 let ukVoice = null;
 
 function loadVoices() {
   const voices = speechSynthesis.getVoices();
-  // Priority: UK male > UK any > US male > any
   ukVoice = voices.find(v => v.lang === 'en-GB' && v.name.includes('Male'))
          || voices.find(v => v.lang === 'en-GB')
          || voices.find(v => v.lang === 'en-US' && v.name.includes('Male'))
@@ -158,27 +153,30 @@ function loadVoices() {
 loadVoices();
 speechSynthesis.onvoiceschanged = loadVoices;
 
-speakBtn.addEventListener('click', speakWord);
-wordInput.addEventListener('keydown', e => { if (e.key === 'Enter') speakWord(); });
+readBtn.addEventListener('click', speakWord);
 
 function speakWord() {
-  const word = wordInput.value.trim().toLowerCase();
-  if (!word || !/^[a-z]+$/.test(word)) return;
-
-  loadVoices(); // refresh voice list
-  wordStatus.textContent = `📖 "${word}"`;
-
-  const utter = new SpeechSynthesisUtterance(word);
+  const word = getWord();
+  if (!word) return;
+  
+  loadVoices();
+  wordStatus.textContent = `📖 "${word.toLowerCase()}"`;
+  
+  const utter = new SpeechSynthesisUtterance(word.toLowerCase());
   utter.lang = 'en-GB';
   utter.rate = 0.85;
   if (ukVoice) utter.voice = ukVoice;
-
   utter.onend = () => { wordStatus.textContent = ''; };
-  utter.onerror = () => { wordStatus.textContent = '⚠️ 讀取失敗'; };
-
+  utter.onerror = () => { wordStatus.textContent = '⚠️'; };
+  
   speechSynthesis.cancel();
   speechSynthesis.speak(utter);
 }
+
+// Enter key → read whole word
+wordInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter') speakWord();
+});
 </script>
 </body>
 </html>
