@@ -57,7 +57,7 @@ h1 { text-align: center; font-size: 2.5em; color: #6b35b3; text-shadow: 2px 2px 
 <div class="container">
 
 <h1>🌈 Phonics Fun</h1>
-<p class="subtitle">撳字母聽發音 · 輸入詞語學拼讀 <span style="color:#aaa;font-size:0.65em;">🇬🇧 v4.4 (真人錄音 · 重複拼讀)</span></p>
+<p class="subtitle">撳字母聽發音 · 輸入詞語學拼讀 <span style="color:#aaa;font-size:0.65em;">🇬🇧 v4.5 (真人錄音 · 慢速拼讀)</span></p>
 
 <!-- Letter Sounds -->
 <div class="section">
@@ -87,8 +87,7 @@ h1 { text-align: center; font-size: 2.5em; color: #6b35b3; text-shadow: 2px 2px 
 
 </div>
 
-<script type="module">
-import { } from './soundtouch.js'; // no longer used, keep for compatibility
+<script>
 // ─── Audio cache ──────────────────────────────────
 const audioCache = {};
 const vowels = new Set(['A','E','I','O','U']);
@@ -140,13 +139,14 @@ function audioCtx() {
 }
 
 const _bufferCache = {};
-async function getBuffer(letter) {
-  const l = letter.toLowerCase();
-  if (_bufferCache[l]) return _bufferCache[l];
-  const resp = await fetch(`sounds/${l}.mp3`);
+async function getBuffer(letter, slow = false) {
+  const key = (slow ? 'slow_' : '') + letter.toLowerCase();
+  if (_bufferCache[key]) return _bufferCache[key];
+  const path = slow ? `sounds/slow/${letter.toLowerCase()}.mp3` : `sounds/${letter.toLowerCase()}.mp3`;
+  const resp = await fetch(path);
   const arr = await resp.arrayBuffer();
   const buf = await audioCtx().decodeAudioData(arr);
-  _bufferCache[l] = buf;
+  _bufferCache[key] = buf;
   return buf;
 }
 
@@ -161,23 +161,19 @@ function trimRange(buf, threshDb = -40) {
   return { start: start / sr, end: end / sr };
 }
 
-// Build one continuous AudioBuffer: each letter repeated N times, crossfaded
-// e.g. c-c-c-a-a-a-t-t-t with natural transitions
-async function buildBlendBuffer(letters, repeats = 3, crossfadeSec = 0.12) {
+// Build one continuous AudioBuffer from SLOW (0.5x, pitch-preserved) letter
+// sounds — one after another with crossfade for natural transition.
+async function buildBlendBuffer(letters, crossfadeSec = 0.1) {
   const ctx = audioCtx();
-  const bufs = await Promise.all(letters.map(l => getBuffer(l)));
+  const bufs = await Promise.all(letters.map(l => getBuffer(l, true))); // slow versions
 
-  // Trim each buffer, then repeat it `repeats` times
-  const parts = [];
-  for (const b of bufs) {
+  // Trim each buffer (no repeat, no stretch — already slow)
+  const parts = bufs.map(b => {
     const t = trimRange(b);
     const s = Math.floor(t.start * b.sampleRate);
     const e = Math.floor(t.end * b.sampleRate);
-    const seg = b.getChannelData(0).slice(s, e);
-    for (let r = 0; r < repeats; r++) {
-      parts.push({ data: seg, sr: b.sampleRate });
-    }
-  }
+    return { data: b.getChannelData(0).slice(s, e), sr: b.sampleRate };
+  });
 
   const sr = ctx.sampleRate;
   const xfadeLen = Math.floor(crossfadeSec * sr);
@@ -191,11 +187,9 @@ async function buildBlendBuffer(letters, repeats = 3, crossfadeSec = 0.12) {
     const overlap = i < parts.length - 1 ? xfadeLen : 0;
     for (let j = 0; j < p.data.length && offset + j < ch.length; j++) {
       let sample = p.data[j];
-      // fade out tail where next part overlaps
       if (overlap > 0 && j >= p.data.length - overlap) {
         sample *= 1 - (j - (p.data.length - overlap)) / overlap;
       }
-      // fade in head where previous part overlapped
       if (i > 0 && j < xfadeLen) {
         sample *= j / xfadeLen;
       }
@@ -204,7 +198,6 @@ async function buildBlendBuffer(letters, repeats = 3, crossfadeSec = 0.12) {
     offset += p.data.length - overlap;
   }
 
-  // Normalize
   let peak = 0;
   for (let i = 0; i < ch.length; i++) peak = Math.max(peak, Math.abs(ch[i]));
   if (peak > 0) for (let i = 0; i < ch.length; i++) ch[i] /= peak;
@@ -334,9 +327,9 @@ blendBtn.addEventListener('click', async () => {
   // Highlight letters while the blended track plays
   const blendPromise = playBlend(letters);
   const dur = await (async () => {
-    const bufs = await Promise.all(letters.map(l => getBuffer(l)));
-    const parts = bufs.map(b => { const t = trimRange(b); return (t.end - t.start) * 3; });
-    return parts.reduce((s, d) => s + d, 0) - 0.12 * (letters.length * 3 - 1);
+    const bufs = await Promise.all(letters.map(l => getBuffer(l, true)));
+    const parts = bufs.map(b => { const t = trimRange(b); return t.end - t.start; });
+    return parts.reduce((s, d) => s + d, 0) - 0.1 * (letters.length - 1);
   })();
 
   // Animate chips at roughly even intervals
