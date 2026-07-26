@@ -57,7 +57,7 @@ h1 { text-align: center; font-size: 2.5em; color: #6b35b3; text-shadow: 2px 2px 
 <div class="container">
 
 <h1>🌈 Phonics Fun</h1>
-<p class="subtitle">撳字母聽發音 · 輸入詞語學拼讀 <span style="color:#aaa;font-size:0.65em;">🇬🇧 v4.0 (真人錄音 · 無縫拼讀)</span></p>
+<p class="subtitle">撳字母聽發音 · 輸入詞語學拼讀 <span style="color:#aaa;font-size:0.65em;">🇬🇧 v4.1 (真人錄音 · 無縫拼讀)</span></p>
 
 <!-- Letter Sounds -->
 <div class="section">
@@ -170,7 +170,7 @@ function stretchWithSoundTouch(buf, start, end, stretch) {
   const frames = srcData.length;
 
   const st = new SoundTouch();
-  st.tempo = 1 / stretch; // tempo < 1 = slower = longer
+  st.tempo = stretch; // tempo > 1 = slower = longer duration (SoundTouch convention)
 
   // Custom source: reads from our Float32Array, tracks position correctly
   let srcPos = 0;
@@ -192,8 +192,8 @@ function stretchWithSoundTouch(buf, start, end, stretch) {
 
   const filter = new SimpleFilter(source, st);
 
-  // Extract all output
-  const maxOut = Math.ceil(frames * stretch * 2) * 2;
+  // maxOut needs to be much larger when tempo > 1 (stretched)
+  const maxOut = Math.ceil(frames * stretch * 3) * 2;
   const out = new Float32Array(maxOut);
   const chunk = new Float32Array(4096 * 2);
   let written = 0;
