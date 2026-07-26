@@ -198,15 +198,27 @@ h1 {
 </div>
 
 <script>
-// ─── Phonics sound map ─────────────────────────────
+// ─── Phonics sound map (UK English / Jolly Phonics) ──
+// Using UK-friendly approximations that TTS reads correctly
 const phonicsSounds = {
-  'A': 'ah', 'B': 'buh', 'C': 'kuh', 'D': 'duh',
-  'E': 'eh', 'F': 'fff', 'G': 'guh', 'H': 'hhh',
-  'I': 'ih', 'J': 'juh', 'K': 'kuh', 'L': 'lll',
-  'M': 'mmm', 'N': 'nnn', 'O': 'oh', 'P': 'puh',
-  'Q': 'kw', 'R': 'rrr', 'S': 'sss', 'T': 'tuh',
-  'U': 'uh', 'V': 'vvv', 'W': 'wuh', 'X': 'ks',
-  'Y': 'yuh', 'Z': 'zzz'
+  'A': 'a',    'B': 'b',    'C': 'k',    'D': 'd',
+  'E': 'e',    'F': 'ffff', 'G': 'g',    'H': 'h',
+  'I': 'i',    'J': 'j',    'K': 'k',    'L': 'lll',
+  'M': 'mmm',  'N': 'nnn',  'O': 'o',    'P': 'p',
+  'Q': 'kw',   'R': 'rrr',  'S': 'sss',  'T': 't',
+  'U': 'u',    'V': 'vvv',  'W': 'w',    'X': 'ks',
+  'Y': 'y',    'Z': 'zzz'
+};
+
+// UK phonics letter names (for blend mode)
+const phonicsLetterNames = {
+  'A': 'ay', 'B': 'bee', 'C': 'see', 'D': 'dee',
+  'E': 'ee', 'F': 'ef', 'G': 'jee', 'H': 'aych',
+  'I': 'eye', 'J': 'jay', 'K': 'kay', 'L': 'el',
+  'M': 'em', 'N': 'en', 'O': 'oh', 'P': 'pee',
+  'Q': 'cue', 'R': 'arr', 'S': 'ess', 'T': 'tee',
+  'U': 'you', 'V': 'vee', 'W': 'double you', 'X': 'eks',
+  'Y': 'why', 'Z': 'zed'
 };
 
 // ─── Speed ─────────────────────────────────────────
@@ -227,7 +239,7 @@ function speak(text, rate = 1.0) {
   return new Promise((resolve) => {
     synth.cancel();
     const utter = new SpeechSynthesisUtterance(text);
-    utter.lang = 'en-US';
+    utter.lang = 'en-GB';
     utter.rate = rate * speed;
     utter.pitch = 1.1;
     utter.volume = 1;
