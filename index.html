@@ -57,7 +57,7 @@ h1 { text-align: center; font-size: 2.5em; color: #6b35b3; text-shadow: 2px 2px 
 <div class="container">
 
 <h1>🌈 Phonics Fun</h1>
-<p class="subtitle">撳字母聽發音 · 輸入詞語學拼讀 <span style="color:#aaa;font-size:0.65em;">🇬🇧 v3.5 (真人錄音 · 無縫拼讀)</span></p>
+<p class="subtitle">撳字母聽發音 · 輸入詞語學拼讀 <span style="color:#aaa;font-size:0.65em;">🇬🇧 v3.6 (真人錄音 · 無縫拼讀)</span></p>
 
 <!-- Letter Sounds -->
 <div class="section">
@@ -161,56 +161,87 @@ function trimRange(buf, threshDb = -40) {
   return { start: start / sr, end: end / sr };
 }
 
-// Build one continuous AudioBuffer from trimmed letter sounds with crossfade
+// Stretch a trimmed buffer segment using SoundTouch (pitch-preserving).
+// Returns Float32Array mono samples at natural pitch but stretched duration.
+function stretchWithSoundTouch(buf, start, end, stretch) {
+  const sr = buf.sampleRate;
+  const s = Math.floor(start * sr), e = Math.floor(end * sr);
+  const src = buf.getChannelData(0).slice(s, e);
+
+  // SoundTouch expects stereo interleaved input
+  const interleaved = new Float32Array(src.length * 2);
+  for (let i = 0; i < src.length; i++) {
+    interleaved[i * 2] = src[i];
+    interleaved[i * 2 + 1] = src[i];
+  }
+
+  const st = new soundtouch.SoundTouch(sr);
+  st.tempo = 1 / stretch; // tempo < 1 = slower = longer
+
+  const source = {
+    pos: 0,
+    extract(target, numFrames) {
+      const avail = src.length - this.pos;
+      const n = Math.min(numFrames, Math.max(avail, 0));
+      for (let i = 0; i < n * 2; i++) target[i] = interleaved[this.pos * 2 + i];
+      this.pos += n;
+      return n;
+    }
+  };
+  const filter = new soundtouch.SimpleFilter(source, st);
+
+  const maxOut = Math.ceil(src.length * stretch * 1.5) * 2;
+  const out = new Float32Array(maxOut);
+  const chunk = new Float32Array(4096 * 2);
+  let written = 0;
+  while (written < maxOut) {
+    const n = filter.extract(chunk, 4096);
+    if (n === 0) break;
+    out.set(chunk.subarray(0, n * 2), written);
+    written += n * 2;
+  }
+
+  // De-interleave to mono (left channel)
+  const frames = Math.floor(written / 2);
+  const mono = new Float32Array(frames);
+  for (let i = 0; i < frames; i++) mono[i] = out[i * 2];
+  return mono;
+}
+
+// Build one continuous AudioBuffer: SoundTouch-stretched parts, crossfaded
 async function buildBlendBuffer(letters, stretch = 2.2, crossfadeSec = 0.12) {
   const ctx = audioCtx();
   const bufs = await Promise.all(letters.map(l => getBuffer(l)));
 
-  // Trim each buffer
+  // Trim + stretch each letter
   const parts = bufs.map(b => {
     const t = trimRange(b);
-    const dur = (t.end - t.start) * stretch;
-    return { buf: b, start: t.start, end: t.end, dur };
+    return stretchWithSoundTouch(b, t.start, t.end, stretch);
   });
 
-  const totalDur = parts.reduce((s, p) => s + p.dur, 0) - crossfadeSec * (parts.length - 1);
   const sr = ctx.sampleRate;
-  const out = ctx.createBuffer(1, Math.ceil(totalDur * sr), sr);
+  const xfadeLen = Math.floor(crossfadeSec * sr);
+  const totalLen = parts.reduce((s, p) => s + p.length, 0) - xfadeLen * (parts.length - 1);
+  const out = ctx.createBuffer(1, totalLen, sr);
   const ch = out.getChannelData(0);
 
   let offset = 0;
   for (let i = 0; i < parts.length; i++) {
     const p = parts[i];
-    const src = p.buf.getChannelData(0);
-    const srcStart = Math.floor(p.start * sr);
-    const srcLen = Math.floor((p.end - p.start) * sr);
-    const outLen = Math.floor(p.dur * sr);
-
-    // Simple linear resample for time-stretch
-    for (let j = 0; j < outLen; j++) {
-      const srcIdx = srcStart + Math.floor(j / stretch);
-      if (srcIdx < srcStart + srcLen && offset + j < ch.length) {
-        ch[offset + j] += src[srcIdx];
+    const overlap = i < parts.length - 1 ? xfadeLen : 0;
+    for (let j = 0; j < p.length && offset + j < ch.length; j++) {
+      let sample = p[j];
+      // fade out the tail where the next part overlaps
+      if (overlap > 0 && j >= p.length - overlap) {
+        sample *= 1 - (j - (p.length - overlap)) / overlap;
       }
-    }
-
-    // Crossfade with next part
-    if (i < parts.length - 1) {
-      const next = parts[i + 1];
-      const nextSrc = next.buf.getChannelData(0);
-      const nextStart = Math.floor(next.start * sr);
-      const xfadeLen = Math.floor(crossfadeSec * sr);
-      for (let j = 0; j < xfadeLen; j++) {
-        const fadeIn = j / xfadeLen;
-        const srcIdx = nextStart + Math.floor(j / stretch);
-        if (srcIdx < nextSrc.length && offset + j < ch.length) {
-          ch[offset + j] += nextSrc[srcIdx] * fadeIn;
-        }
+      // fade in the head where previous part overlapped
+      if (i > 0 && j < xfadeLen) {
+        sample *= j / xfadeLen;
       }
-      offset += outLen - xfadeLen;
-    } else {
-      offset += outLen;
+      ch[offset + j] += sample;
     }
+    offset += p.length - overlap;
   }
 
   // Normalize
