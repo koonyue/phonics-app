@@ -43,7 +43,7 @@ h1 { text-align: center; font-size: 2.5em; color: #6b35b3; text-shadow: 2px 2px 
 <div class="container">
 
 <h1>🌈 Phonics Fun</h1>
-<p class="subtitle">真人字母發音 · 逐個拼讀 · Google UK 讀全字 <span style="color:#aaa;font-size:0.65em;">v9.1</span></p>
+<p class="subtitle">真人字母發音 · 逐個拼讀 · UK男聲讀全字 <span style="color:#aaa;font-size:0.65em;">v9.2</span></p>
 
 <!-- Letter Grid -->
 <div class="section">
@@ -65,7 +65,7 @@ h1 { text-align: center; font-size: 2.5em; color: #6b35b3; text-shadow: 2px 2px 
 
 <!-- Whole Word -->
 <div class="section">
-  <h2>📖 讀全字 (🇬🇧 Google UK 男聲)</h2>
+  <h2>📖 讀全字 (系統 UK 男聲)</h2>
   <div class="input-row">
     <input type="text" class="word-input" id="wordInput" placeholder="輸入任何英文詞語" maxlength="30">
     <button class="speak-btn" id="speakBtn">🔊 讀字</button>
@@ -141,10 +141,22 @@ function playSound(letter) {
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
-// ─── Whole Word (Google TTS UK) ────────────────────
+// ─── Whole Word (Browser Speech API, UK voice priority) ──
 const wordInput = document.getElementById('wordInput');
 const speakBtn = document.getElementById('speakBtn');
 const wordStatus = document.getElementById('wordStatus');
+let ukVoice = null;
+
+function loadVoices() {
+  const voices = speechSynthesis.getVoices();
+  // Priority: UK male > UK any > US male > any
+  ukVoice = voices.find(v => v.lang === 'en-GB' && v.name.includes('Male'))
+         || voices.find(v => v.lang === 'en-GB')
+         || voices.find(v => v.lang === 'en-US' && v.name.includes('Male'))
+         || voices[0];
+}
+loadVoices();
+speechSynthesis.onvoiceschanged = loadVoices;
 
 speakBtn.addEventListener('click', speakWord);
 wordInput.addEventListener('keydown', e => { if (e.key === 'Enter') speakWord(); });
@@ -152,14 +164,20 @@ wordInput.addEventListener('keydown', e => { if (e.key === 'Enter') speakWord();
 function speakWord() {
   const word = wordInput.value.trim().toLowerCase();
   if (!word || !/^[a-z]+$/.test(word)) return;
-  
+
+  loadVoices(); // refresh voice list
   wordStatus.textContent = `📖 "${word}"`;
-  // Google Translate TTS with en-GB (UK English)
-  const url = `https://translate.google.com/translate_tts?ie=UTF-8&tl=en-GB&client=tw-ob&q=${encodeURIComponent(word)}`;
-  const audio = new Audio(url);
-  audio.onended = () => { wordStatus.textContent = ''; };
-  audio.onerror = () => { wordStatus.textContent = '⚠️ 無法載入讀音'; };
-  audio.play();
+
+  const utter = new SpeechSynthesisUtterance(word);
+  utter.lang = 'en-GB';
+  utter.rate = 0.85;
+  if (ukVoice) utter.voice = ukVoice;
+
+  utter.onend = () => { wordStatus.textContent = ''; };
+  utter.onerror = () => { wordStatus.textContent = '⚠️ 讀取失敗'; };
+
+  speechSynthesis.cancel();
+  speechSynthesis.speak(utter);
 }
 </script>
 </body>
