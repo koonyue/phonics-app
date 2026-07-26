@@ -26,54 +26,71 @@ h1 { text-align: center; font-size: 2.5em; color: #6b35b3; text-shadow: 2px 2px 
 .letter-btn.playing { background: #ffd700; border-color: #ff6b6b; transform: scale(1.15); }
 .letter-btn.vowel { background: linear-gradient(145deg, #ffe0f0, #ffd0e0); color: #e84393; }
 
-.word-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 10px; }
-.word-btn { padding: 14px 8px; border: 3px solid #a29bfe; border-radius: 12px; background: linear-gradient(145deg, #fff, #f0e8ff); font-size: 1.3em; font-weight: bold; color: #6b35b3; cursor: pointer; transition: all 0.15s; text-align: center; text-transform: uppercase; box-shadow: 0 3px 6px rgba(0,0,0,0.1); }
-.word-btn:hover { transform: scale(1.08); border-color: #6c5ce7; background: #dfe6fd; }
-.word-btn:active { transform: scale(0.95); background: #a29bfe; color: #fff; }
-.word-btn.playing { background: #6c5ce7; color: #fff; border-color: #4a3db7; }
+.phonics-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.phonics-input { flex: 1; min-width: 200px; padding: 12px 16px; font-size: 1.4em; border: 3px solid #fd79a8; border-radius: 12px; outline: none; text-transform: uppercase; text-align: center; letter-spacing: 3px; }
+.phonics-btn { padding: 12px 28px; background: #fd79a8; color: white; border: none; border-radius: 12px; font-size: 1.3em; font-weight: bold; cursor: pointer; transition: all 0.15s; }
+.phonics-btn:hover { background: #e84393; transform: scale(1.05); }
+.phonics-btn:active { transform: scale(0.95); }
+.chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+.chip { padding: 6px 14px; border-radius: 20px; font-weight: bold; font-size: 1.2em; background: #dfe6e9; color: #636e72; transition: all 0.2s; }
+.chip.active { background: #fd79a8; color: #fff; transform: scale(1.15); }
 
-.custom-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 15px; }
-.custom-input { flex: 1; min-width: 200px; padding: 12px 16px; font-size: 1.4em; border: 3px solid #a29bfe; border-radius: 12px; outline: none; text-transform: lowercase; text-align: center; }
-.read-btn { padding: 12px 28px; background: #00b894; color: white; border: none; border-radius: 12px; font-size: 1.3em; font-weight: bold; cursor: pointer; transition: all 0.15s; box-shadow: 0 3px 6px rgba(0,0,0,0.15); }
+.word-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 8px; }
+.word-btn { padding: 12px 6px; border: 2px solid #a29bfe; border-radius: 10px; background: linear-gradient(145deg, #fff, #f0e8ff); font-size: 1.1em; font-weight: bold; color: #6b35b3; cursor: pointer; transition: all 0.15s; text-align: center; text-transform: uppercase; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+.word-btn:hover { transform: scale(1.06); border-color: #6c5ce7; background: #dfe6fd; }
+.word-btn:active { background: #a29bfe; color: #fff; }
+
+.custom-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 12px; }
+.custom-input { flex: 1; min-width: 200px; padding: 12px 16px; font-size: 1.3em; border: 3px solid #a29bfe; border-radius: 12px; outline: none; text-transform: lowercase; text-align: center; }
+.read-btn { padding: 12px 28px; background: #00b894; color: white; border: none; border-radius: 12px; font-size: 1.2em; font-weight: bold; cursor: pointer; transition: all 0.15s; }
 .read-btn:hover { background: #00a381; transform: scale(1.05); }
 .read-btn:active { background: #008966; transform: scale(0.95); }
 
-.status { text-align: center; color: #888; font-size: 0.9em; margin-top: 10px; min-height: 20px; }
-.source-tag { text-align: center; color: #aaa; font-size: 0.75em; margin-top: 5px; }
+.status { text-align: center; color: #888; font-size: 0.9em; margin-top: 8px; min-height: 20px; }
+.source-tag { text-align: center; color: #aaa; font-size: 0.7em; margin-top: 4px; }
 </style>
 </head>
 <body>
 <div class="container">
 
 <h1>🌈 Phonics Fun</h1>
-<p class="subtitle">撳字母聽發音 · UK男聲讀字 <span style="color:#aaa;font-size:0.65em;">🇬🇧 v8.0</span></p>
+<p class="subtitle">撳字母聽發音 · 逐個拼讀 · UK男聲讀字 <span style="color:#aaa;font-size:0.65em;">🇬🇧 v8.1</span></p>
 
-<!-- Letter Sounds -->
+<!-- Letter Grid -->
 <div class="section">
   <h2>🔤 字母發音</h2>
   <div class="letter-grid" id="letterGrid"></div>
   <div class="status" id="letterStatus"></div>
 </div>
 
+<!-- Sequential Phonics -->
+<div class="section">
+  <h2>🔗 逐個拼讀 (Phonics)</h2>
+  <div class="phonics-row">
+    <input type="text" class="phonics-input" id="phonicsInput" placeholder="輸入詞語, e.g. CAT" maxlength="20">
+    <button class="phonics-btn" id="phonicsBtn">🔊 逐個讀</button>
+  </div>
+  <div class="chips" id="chips"></div>
+  <div class="status" id="phonicsStatus"></div>
+</div>
+
 <!-- Whole Words -->
 <div class="section">
-  <h2>📖 讀字 (UK男聲)</h2>
+  <h2>📖 讀字 (🇬🇧 Ryan 男聲)</h2>
   <div class="word-grid" id="wordGrid"></div>
   <div class="custom-row">
     <input type="text" class="custom-input" id="customInput" placeholder="自訂詞語, e.g. butterfly" maxlength="30">
     <button class="read-btn" id="customReadBtn">🔊 讀字</button>
   </div>
   <div class="status" id="wordStatus"></div>
-  <div class="source-tag">真人錄音: 🇬🇧 Ryan (Microsoft Neural) · 自訂: Browser UK TTS</div>
+  <div class="source-tag">字庫: Microsoft Neural 🇬🇧 Ryan · 自訂: Browser UK TTS</div>
 </div>
 
 </div>
 
 <script>
 const vowels = new Set(['A','E','I','O','U']);
-
-// ─── Pre-generated UK male words (edge-tts en-GB-RyanNeural) ───
-const preWords = ["cat","dog","sit","tap","red","big","fun","hat","jam","kid","leg","man","not","pen","run","sun","top","van","wet","yes","zip","bed","cup","fox","get","hop","lip","mud","nap","pig","rat","sad"];
+const allWords = ["cat","dog","sit","tap","red","big","fun","hat","jam","kid","leg","man","not","pen","run","sun","top","van","wet","yes","zip","bed","cup","fox","get","hop","lip","mud","nap","pig","rat","sad","bus","cub","dig","dot","fan","gap","hen","hit","job","kit","log","map","net","pan","rug","six","tub","win","box","dip","fed","gut","hum","jet","kin","lad","mix","nut","peg","rip","sob","tin","vet","wag","yak","zap","hand","lamp","desk","milk","jump","pond","belt","sand","stop","frog","drum","flag","crab","stem","twin","plug","shop","chip","fish","path","king","ring","sing","long","rain","boat","tree","star","moon","book","park","farm"];
 
 // ─── Letter Grid ───────────────────────────────────
 const letterGrid = document.getElementById('letterGrid');
@@ -84,9 +101,7 @@ for (let i = 0; i < 26; i++) {
   const btn = document.createElement('button');
   btn.className = 'letter-btn' + (vowels.has(letter) ? ' vowel' : '');
   btn.textContent = letter;
-  btn.addEventListener('click', () => {
-    playLetter(letter, btn);
-  });
+  btn.addEventListener('click', () => playLetter(letter, btn));
   letterGrid.appendChild(btn);
 }
 
@@ -96,68 +111,108 @@ function playLetter(letter, btn) {
   btn.classList.add('playing');
   letterStatus.textContent = `🔊 ${letter}`;
   audio.play();
-  audio.onended = () => {
-    btn.classList.remove('playing');
-    letterStatus.textContent = '';
-  };
-  audio.onerror = () => {
-    btn.classList.remove('playing');
-    letterStatus.textContent = '⚠️ 錄音未載入';
-  };
+  audio.onended = () => { btn.classList.remove('playing'); letterStatus.textContent = ''; };
+  audio.onerror = () => { btn.classList.remove('playing'); letterStatus.textContent = '⚠️ 錄音未載入'; };
 }
 
-// ─── Word Grid + Custom Input ───────────────────────
+// ─── Sequential Phonics ────────────────────────────
+const phonicsInput = document.getElementById('phonicsInput');
+const phonicsBtn = document.getElementById('phonicsBtn');
+const chips = document.getElementById('chips');
+const phonicsStatus = document.getElementById('phonicsStatus');
+let isPhonicsPlaying = false;
+
+phonicsBtn.addEventListener('click', () => playSequential());
+phonicsInput.addEventListener('keydown', e => { if (e.key === 'Enter') playSequential(); });
+
+async function playSequential() {
+  const word = phonicsInput.value.trim().toUpperCase();
+  if (!word || !/^[A-Z]+$/.test(word) || isPhonicsPlaying) return;
+  isPhonicsPlaying = true;
+  
+  // Show chips
+  const letters = word.split('');
+  chips.innerHTML = letters.map(l => `<span class="chip" data-letter="${l}">${l}</span>`).join('');
+  
+  phonicsStatus.textContent = `🔊 逐個讀: ${word}`;
+  
+  for (let i = 0; i < letters.length; i++) {
+    const chip = chips.querySelector(`[data-letter="${letters[i]}"]`);
+    if (chip && i > 0) {
+      const prev = chips.querySelectorAll('.chip')[i-1];
+      if (prev) prev.classList.remove('active');
+    }
+    if (chip) chip.classList.add('active');
+    
+    await playPhonic(letters[i]);
+    
+    // Small gap between letters
+    await sleep(300);
+  }
+  
+  // Clear last chip
+  const allChips = chips.querySelectorAll('.chip');
+  if (allChips.length > 0) allChips[allChips.length-1].classList.remove('active');
+  
+  phonicsStatus.textContent = '';
+  isPhonicsPlaying = false;
+}
+
+function playPhonic(letter) {
+  return new Promise(resolve => {
+    const audio = new Audio(`sounds/${letter.toLowerCase()}.mp3`);
+    audio.onended = resolve;
+    audio.onerror = resolve;
+    audio.play();
+  });
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// ─── Word Grid + Custom ─────────────────────────────
 const wordGrid = document.getElementById('wordGrid');
 const wordStatus = document.getElementById('wordStatus');
 const customInput = document.getElementById('customInput');
 const customReadBtn = document.getElementById('customReadBtn');
 
-// Build word buttons
-for (const w of preWords) {
+for (const w of allWords) {
   const btn = document.createElement('button');
   btn.className = 'word-btn';
   btn.textContent = w;
-  btn.addEventListener('click', () => readWord(w, btn));
+  btn.addEventListener('click', () => readWord(w));
   wordGrid.appendChild(btn);
 }
 
-// Custom word button
-customReadBtn.addEventListener('click', () => {
-  const word = customInput.value.trim().toLowerCase();
-  if (!word || !/^[a-z]+$/.test(word)) return;
-  readCustom(word);
-});
-customInput.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') {
-    const word = customInput.value.trim().toLowerCase();
-    if (word && /^[a-z]+$/.test(word)) readCustom(word);
-  }
-});
+customReadBtn.addEventListener('click', () => readCustom());
+customInput.addEventListener('keydown', e => { if (e.key === 'Enter') readCustom(); });
 
-function readWord(word, btn) {
-  document.querySelectorAll('.playing').forEach(b => b.classList.remove('playing'));
-  if (btn) btn.classList.add('playing');
-  wordStatus.textContent = `📖 "${word}"`;
+function readWord(word) {
+  wordStatus.textContent = `📖 "${word}" 🇬🇧 Ryan`;
   const audio = new Audio(`sounds/words/${word}.mp3`);
   audio.play();
-  audio.onended = () => {
-    if (btn) btn.classList.remove('playing');
-    wordStatus.textContent = '';
-  };
+  audio.onended = () => { wordStatus.textContent = ''; };
   audio.onerror = () => {
-    // Fallback to browser TTS
-    readCustom(word);
-    if (btn) btn.classList.remove('playing');
+    // Fallback TTS
+    speakTTS(word);
   };
 }
 
-function readCustom(word) {
-  document.querySelectorAll('.playing').forEach(b => b.classList.remove('playing'));
+function readCustom() {
+  const word = customInput.value.trim().toLowerCase();
+  if (!word || !/^[a-z]+$/.test(word)) return;
+  // Check if pre-generated
+  if (allWords.includes(word)) {
+    readWord(word);
+    return;
+  }
+  speakTTS(word);
+}
+
+function speakTTS(word) {
   wordStatus.textContent = `📖 "${word}" (TTS)`;
   const utter = new SpeechSynthesisUtterance(word);
   utter.lang = 'en-GB';
-  utter.rate = 0.85;
-  // Try to select a UK male voice
+  utter.rate = 0.8;
   const voices = speechSynthesis.getVoices();
   const ukMale = voices.find(v => v.lang.startsWith('en-GB') && v.name.toLowerCase().includes('male')) ||
                  voices.find(v => v.lang.startsWith('en-GB'));
@@ -166,7 +221,6 @@ function readCustom(word) {
   speechSynthesis.speak(utter);
 }
 
-// Pre-load voices
 speechSynthesis.getVoices();
 speechSynthesis.onvoiceschanged = () => speechSynthesis.getVoices();
 </script>
