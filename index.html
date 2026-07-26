@@ -57,7 +57,7 @@ h1 { text-align: center; font-size: 2.5em; color: #6b35b3; text-shadow: 2px 2px 
 <div class="container">
 
 <h1>🌈 Phonics Fun</h1>
-<p class="subtitle">撳字母聽發音 · 輸入詞語學拼讀 <span style="color:#aaa;font-size:0.65em;">🇬🇧 v3.7 (真人錄音 · 無縫拼讀)</span></p>
+<p class="subtitle">撳字母聽發音 · 輸入詞語學拼讀 <span style="color:#aaa;font-size:0.65em;">🇬🇧 v3.8 (真人錄音 · 無縫拼讀)</span></p>
 
 <!-- Letter Sounds -->
 <div class="section">
@@ -180,11 +180,13 @@ function stretchWithSoundTouch(buf, start, end, stretch) {
 
   const source = {
     pos: 0,
-    extract(target, numFrames) {
-      const avail = src.length - this.pos;
+    extract(target, numFrames, position) {
+      // position is in frames from the start of the source
+      const p = position !== undefined ? position : this.pos;
+      const avail = src.length - p;
       const n = Math.min(numFrames, Math.max(avail, 0));
-      for (let i = 0; i < n * 2; i++) target[i] = interleaved[this.pos * 2 + i];
-      this.pos += n;
+      for (let i = 0; i < n * 2; i++) target[i] = interleaved[p * 2 + i];
+      if (position === undefined) this.pos += n;
       return n;
     }
   };
