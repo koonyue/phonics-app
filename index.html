@@ -57,7 +57,7 @@ h1 { text-align: center; font-size: 2.5em; color: #6b35b3; text-shadow: 2px 2px 
 <div class="container">
 
 <h1>🌈 Phonics Fun</h1>
-<p class="subtitle">撳字母聽發音 · 輸入詞語學拼讀 <span style="color:#aaa;font-size:0.65em;">🇬🇧 v3.6 (真人錄音 · 無縫拼讀)</span></p>
+<p class="subtitle">撳字母聽發音 · 輸入詞語學拼讀 <span style="color:#aaa;font-size:0.65em;">🇬🇧 v3.7 (真人錄音 · 無縫拼讀)</span></p>
 
 <!-- Letter Sounds -->
 <div class="section">
@@ -87,8 +87,8 @@ h1 { text-align: center; font-size: 2.5em; color: #6b35b3; text-shadow: 2px 2px 
 
 </div>
 
-<script src="soundtouch.js"></script>
-<script>
+<script type="module">
+import { SoundTouch, SimpleFilter } from './soundtouch.js';
 // ─── Audio cache ──────────────────────────────────
 const audioCache = {};
 const vowels = new Set(['A','E','I','O','U']);
@@ -175,7 +175,7 @@ function stretchWithSoundTouch(buf, start, end, stretch) {
     interleaved[i * 2 + 1] = src[i];
   }
 
-  const st = new soundtouch.SoundTouch(sr);
+  const st = new SoundTouch(sr);
   st.tempo = 1 / stretch; // tempo < 1 = slower = longer
 
   const source = {
@@ -188,7 +188,7 @@ function stretchWithSoundTouch(buf, start, end, stretch) {
       return n;
     }
   };
-  const filter = new soundtouch.SimpleFilter(source, st);
+  const filter = new SimpleFilter(source, st);
 
   const maxOut = Math.ceil(src.length * stretch * 1.5) * 2;
   const out = new Float32Array(maxOut);
