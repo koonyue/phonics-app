@@ -10,71 +10,74 @@
 body {
   font-family: 'Comic Sans MS', 'Chalkboard SE', sans-serif;
   background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 50%, #ff9a9e 100%);
-  min-height: 100vh;
-  padding: 20px;
+  min-height: 100vh; padding: 20px;
 }
 .container { max-width: 900px; margin: 0 auto; }
-h1 { text-align: center; font-size: 2.5em; color: #6b35b3; text-shadow: 2px 2px 0 #ffd700; margin-bottom: 10px; }
-.subtitle { text-align: center; font-size: 1.2em; color: #555; margin-bottom: 20px; }
-.section { background: rgba(255,255,255,0.9); border-radius: 20px; padding: 20px; margin-bottom: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
-.section h2 { color: #e84393; margin-bottom: 15px; font-size: 1.5em; }
+h1 { text-align: center; font-size: 2.5em; color: #6b35b3; text-shadow: 2px 2px 0 #ffd700; margin-bottom: 8px; }
+.subtitle { text-align: center; color: #555; margin-bottom: 20px; }
+.section { background: rgba(255,255,255,0.9); border-radius: 20px; padding: 20px; margin-bottom: 18px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+.section h2 { color: #e84393; margin-bottom: 12px; font-size: 1.4em; }
 
-.letter-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(58px, 1fr)); gap: 10px; }
-.letter-btn { aspect-ratio: 1; border: 3px solid #ddd; border-radius: 15px; background: linear-gradient(145deg, #fff, #f0f0f0); font-size: 1.6em; font-weight: bold; color: #333; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 6px rgba(0,0,0,0.1); }
+.letter-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(55px, 1fr)); gap: 8px; }
+.letter-btn { aspect-ratio: 1; border: 3px solid #ddd; border-radius: 14px; background: linear-gradient(145deg, #fff, #f0f0f0); font-size: 1.5em; font-weight: bold; color: #333; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 6px rgba(0,0,0,0.1); }
 .letter-btn:hover { transform: scale(1.1); border-color: #ff6b6b; }
-.letter-btn:active { transform: scale(0.95); background: #ffeaa7; }
-.letter-btn.playing { background: #ffd700; border-color: #ff6b6b; transform: scale(1.15); }
+.letter-btn:active, .letter-btn.playing { transform: scale(1.15); background: #ffd700; border-color: #ff6b6b; }
 .letter-btn.vowel { background: linear-gradient(145deg, #ffe0f0, #ffd0e0); color: #e84393; }
+.letter-btn.vowel.playing { background: #ffd700; color: #333; }
 
 .input-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-.word-input { flex: 1; min-width: 200px; padding: 14px 18px; font-size: 1.5em; border: 3px solid #a29bfe; border-radius: 14px; outline: none; text-align: center; text-transform: uppercase; letter-spacing: 3px; }
-.speak-btn { padding: 14px 32px; background: #00b894; color: white; border: none; border-radius: 14px; font-size: 1.3em; font-weight: bold; cursor: pointer; transition: all 0.15s; box-shadow: 0 3px 8px rgba(0,0,0,0.15); }
+.word-input { flex: 1; min-width: 180px; padding: 14px 18px; font-size: 1.5em; border: 3px solid #a29bfe; border-radius: 14px; outline: none; text-align: center; text-transform: uppercase; letter-spacing: 2px; }
+.speak-btn { padding: 14px 28px; background: #00b894; color: white; border: none; border-radius: 14px; font-size: 1.2em; font-weight: bold; cursor: pointer; transition: all 0.15s; }
 .speak-btn:hover { background: #00a381; transform: scale(1.05); }
 .speak-btn:active { background: #008966; transform: scale(0.95); }
 
-.status { text-align: center; color: #888; font-size: 0.9em; margin-top: 8px; min-height: 20px; }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.chip { padding: 5px 12px; border-radius: 18px; font-weight: bold; font-size: 1.1em; background: #dfe6e9; color: #636e72; transition: all 0.2s; }
+.chip.active { background: #fd79a8; color: #fff; transform: scale(1.15); }
+
+.status { text-align: center; color: #888; font-size: 0.85em; margin-top: 6px; min-height: 18px; }
+.source-tag { text-align: center; color: #bbb; font-size: 0.7em; }
 </style>
 </head>
 <body>
 <div class="container">
 
 <h1>🌈 Phonics Fun</h1>
-<p class="subtitle">真人字母發音 · UK男聲讀全字 <span style="color:#aaa;font-size:0.65em;">v9.0</span></p>
+<p class="subtitle">真人字母發音 · 逐個拼讀 · Google UK 讀全字 <span style="color:#aaa;font-size:0.65em;">v9.1</span></p>
 
-<!-- Letter Grid — user's real recordings -->
+<!-- Letter Grid -->
 <div class="section">
   <h2>🔤 字母發音 (真人)</h2>
   <div class="letter-grid" id="letterGrid"></div>
   <div class="status" id="letterStatus"></div>
 </div>
 
-<!-- Word Reading — Web Speech API UK male -->
+<!-- Sequential Phonics -->
 <div class="section">
-  <h2>📖 讀字 (🇬🇧 英國男聲)</h2>
+  <h2>🔗 逐個拼讀 (真人)</h2>
   <div class="input-row">
-    <input type="text" class="word-input" id="wordInput" placeholder="輸入英文詞語, e.g. CAT" maxlength="30">
+    <input type="text" class="word-input" id="phonicsInput" placeholder="輸入詞語, e.g. CAT" maxlength="20">
+    <button class="speak-btn" id="phonicsBtn" style="background:#fd79a8;">🔊 逐個讀</button>
+  </div>
+  <div class="chips" id="chips"></div>
+  <div class="status" id="phonicsStatus"></div>
+</div>
+
+<!-- Whole Word -->
+<div class="section">
+  <h2>📖 讀全字 (🇬🇧 Google UK 男聲)</h2>
+  <div class="input-row">
+    <input type="text" class="word-input" id="wordInput" placeholder="輸入任何英文詞語" maxlength="30">
     <button class="speak-btn" id="speakBtn">🔊 讀字</button>
   </div>
   <div class="status" id="wordStatus"></div>
+  <div class="source-tag">Powered by Google Translate TTS (en-GB)</div>
 </div>
 
 </div>
 
 <script>
 const vowels = new Set(['A','E','I','O','U']);
-let ukVoice = null;
-
-// ─── Load best UK male voice ──────────────────────
-function findUKVoice() {
-  const voices = speechSynthesis.getVoices();
-  // Prefer UK male
-  ukVoice = voices.find(v => v.lang.startsWith('en-GB') && v.name.toLowerCase().includes('male'))
-         || voices.find(v => v.lang.startsWith('en-GB'))
-         || voices.find(v => v.lang === 'en-US' && v.name.toLowerCase().includes('male'))
-         || null;
-}
-findUKVoice();
-speechSynthesis.onvoiceschanged = findUKVoice;
 
 // ─── Letter Grid ───────────────────────────────────
 const letterGrid = document.getElementById('letterGrid');
@@ -97,32 +100,67 @@ for (let i = 0; i < 26; i++) {
   letterGrid.appendChild(btn);
 }
 
-// ─── Word Reading (Web Speech API) ─────────────────
+// ─── Sequential Phonics ────────────────────────────
+const phonicsInput = document.getElementById('phonicsInput');
+const phonicsBtn = document.getElementById('phonicsBtn');
+const chips = document.getElementById('chips');
+const phonicsStatus = document.getElementById('phonicsStatus');
+let isPlaying = false;
+
+phonicsBtn.addEventListener('click', playSequential);
+phonicsInput.addEventListener('keydown', e => { if (e.key === 'Enter') playSequential(); });
+
+async function playSequential() {
+  const word = phonicsInput.value.trim().toUpperCase();
+  if (!word || !/^[A-Z]+$/.test(word) || isPlaying) return;
+  isPlaying = true;
+  
+  const letters = word.split('');
+  chips.innerHTML = letters.map(l => `<span class="chip" data-letter="${l}">${l}</span>`).join('');
+  phonicsStatus.textContent = `🔊 逐個讀: ${word}`;
+  
+  for (let i = 0; i < letters.length; i++) {
+    document.querySelectorAll('.chip').forEach((c, j) => c.classList.toggle('active', j === i));
+    await playSound(letters[i]);
+    await sleep(350);
+  }
+  
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  phonicsStatus.textContent = '';
+  isPlaying = false;
+}
+
+function playSound(letter) {
+  return new Promise(resolve => {
+    const audio = new Audio(`sounds/${letter.toLowerCase()}.mp3`);
+    audio.onended = resolve;
+    audio.onerror = resolve;
+    audio.play();
+  });
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// ─── Whole Word (Google TTS UK) ────────────────────
 const wordInput = document.getElementById('wordInput');
 const speakBtn = document.getElementById('speakBtn');
 const wordStatus = document.getElementById('wordStatus');
 
+speakBtn.addEventListener('click', speakWord);
+wordInput.addEventListener('keydown', e => { if (e.key === 'Enter') speakWord(); });
+
 function speakWord() {
-  const word = wordInput.value.trim();
-  if (!word || !/^[A-Za-z]+$/.test(word)) return;
+  const word = wordInput.value.trim().toLowerCase();
+  if (!word || !/^[a-z]+$/.test(word)) return;
   
   wordStatus.textContent = `📖 "${word}"`;
-  const utter = new SpeechSynthesisUtterance(word.toLowerCase());
-  utter.lang = 'en-GB';
-  utter.rate = 0.8;
-  if (ukVoice) utter.voice = ukVoice;
-  
-  utter.onend = () => { wordStatus.textContent = ''; };
-  utter.onerror = () => { wordStatus.textContent = '⚠️ TTS error'; };
-  
-  speechSynthesis.cancel(); // stop any previous
-  speechSynthesis.speak(utter);
+  // Google Translate TTS with en-GB (UK English)
+  const url = `https://translate.google.com/translate_tts?ie=UTF-8&tl=en-GB&client=tw-ob&q=${encodeURIComponent(word)}`;
+  const audio = new Audio(url);
+  audio.onended = () => { wordStatus.textContent = ''; };
+  audio.onerror = () => { wordStatus.textContent = '⚠️ 無法載入讀音'; };
+  audio.play();
 }
-
-speakBtn.addEventListener('click', speakWord);
-wordInput.addEventListener('keydown', e => {
-  if (e.key === 'Enter') speakWord();
-});
 </script>
 </body>
 </html>
