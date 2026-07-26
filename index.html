@@ -57,7 +57,7 @@ h1 { text-align: center; font-size: 2.5em; color: #6b35b3; text-shadow: 2px 2px 
 <div class="container">
 
 <h1>🌈 Phonics Fun</h1>
-<p class="subtitle">撳字母聽發音 · 輸入詞語學拼讀 <span style="color:#aaa;font-size:0.65em;">🇬🇧 v4.2 (真人錄音 · 無縫拼讀)</span></p>
+<p class="subtitle">撳字母聽發音 · 輸入詞語學拼讀 <span style="color:#aaa;font-size:0.65em;">🇬🇧 v4.3 (真人錄音 · 無縫拼讀)</span></p>
 
 <!-- Letter Sounds -->
 <div class="section">
@@ -88,7 +88,7 @@ h1 { text-align: center; font-size: 2.5em; color: #6b35b3; text-shadow: 2px 2px 
 </div>
 
 <script type="module">
-import { SoundTouch, SimpleFilter } from './soundtouch.js';
+import { } from './soundtouch.js'; // no longer used, keep for compatibility
 // ─── Audio cache ──────────────────────────────────
 const audioCache = {};
 const vowels = new Set(['A','E','I','O','U']);
@@ -161,70 +161,23 @@ function trimRange(buf, threshDb = -40) {
   return { start: start / sr, end: end / sr };
 }
 
-// Stretch a trimmed buffer segment using SoundTouch (pitch-preserving).
-// Custom source that correctly tracks position for SimpleFilter.
-function stretchWithSoundTouch(buf, start, end, stretch) {
-  const sr = buf.sampleRate;
-  const s = Math.floor(start * sr), e = Math.floor(end * sr);
-  const srcData = buf.getChannelData(0).slice(s, e);
-  const frames = srcData.length;
-
-  const st = new SoundTouch();
-  st.tempo = 1 / stretch; // tempo < 1 = slower = longer duration
-
-  // Custom source: reads from our Float32Array, tracks position correctly
-  let srcPos = 0;
-  const source = {
-    extract(target, numFrames, position) {
-      // SimpleFilter calls: sourceSound.extract(samples, numFrames, this._sourcePosition)
-      // We must respect the position argument AND track our own position
-      const p = position !== undefined ? position : srcPos;
-      const avail = frames - p;
-      const n = Math.min(numFrames, Math.max(avail, 0));
-      for (let i = 0; i < n; i++) {
-        target[i * 2] = srcData[p + i];
-        target[i * 2 + 1] = srcData[p + i];
-      }
-      if (position === undefined) srcPos += n;
-      return n;
-    }
-  };
-
-  const filter = new SimpleFilter(source, st);
-
-  // maxOut: generous buffer for stretched output
-  const maxOut = Math.ceil(frames * stretch * 2.5) * 2;
-  const out = new Float32Array(maxOut);
-  const chunk = new Float32Array(4096 * 2);
-  let written = 0;
-  while (written < maxOut) {
-    const n = filter.extract(chunk, 4096);
-    if (n === 0) break;
-    out.set(chunk.subarray(0, n * 2), written);
-    written += n * 2;
-  }
-
-  // De-interleave stereo to mono
-  const outFrames = Math.floor(written / 2);
-  const mono = new Float32Array(outFrames);
-  for (let i = 0; i < outFrames; i++) mono[i] = out[i * 2];
-  return mono;
-}
-
-// Build one continuous AudioBuffer: SoundTouch-stretched parts, crossfaded
-async function buildBlendBuffer(letters, stretch = 2.2, crossfadeSec = 0.12) {
+// Build one continuous AudioBuffer: trimmed parts, crossfaded, NO stretch
+// (stretch caused issues with SoundTouch library — keep it simple and reliable)
+async function buildBlendBuffer(letters, crossfadeSec = 0.15) {
   const ctx = audioCtx();
   const bufs = await Promise.all(letters.map(l => getBuffer(l)));
 
-  // Trim + stretch each letter
+  // Trim each buffer, no stretch
   const parts = bufs.map(b => {
     const t = trimRange(b);
-    return stretchWithSoundTouch(b, t.start, t.end, stretch);
+    const s = Math.floor(t.start * b.sampleRate);
+    const e = Math.floor(t.end * b.sampleRate);
+    return { data: b.getChannelData(0).slice(s, e), sr: b.sampleRate };
   });
 
   const sr = ctx.sampleRate;
   const xfadeLen = Math.floor(crossfadeSec * sr);
-  const totalLen = parts.reduce((s, p) => s + p.length, 0) - xfadeLen * (parts.length - 1);
+  const totalLen = parts.reduce((s, p) => s + p.data.length, 0) - xfadeLen * (parts.length - 1);
   const out = ctx.createBuffer(1, totalLen, sr);
   const ch = out.getChannelData(0);
 
@@ -232,19 +185,19 @@ async function buildBlendBuffer(letters, stretch = 2.2, crossfadeSec = 0.12) {
   for (let i = 0; i < parts.length; i++) {
     const p = parts[i];
     const overlap = i < parts.length - 1 ? xfadeLen : 0;
-    for (let j = 0; j < p.length && offset + j < ch.length; j++) {
-      let sample = p[j];
-      // fade out the tail where the next part overlaps
-      if (overlap > 0 && j >= p.length - overlap) {
-        sample *= 1 - (j - (p.length - overlap)) / overlap;
+    for (let j = 0; j < p.data.length && offset + j < ch.length; j++) {
+      let sample = p.data[j];
+      // fade out tail where next part overlaps
+      if (overlap > 0 && j >= p.data.length - overlap) {
+        sample *= 1 - (j - (p.data.length - overlap)) / overlap;
       }
-      // fade in the head where previous part overlapped
+      // fade in head where previous part overlapped
       if (i > 0 && j < xfadeLen) {
         sample *= j / xfadeLen;
       }
       ch[offset + j] += sample;
     }
-    offset += p.length - overlap;
+    offset += p.data.length - overlap;
   }
 
   // Normalize
@@ -255,9 +208,9 @@ async function buildBlendBuffer(letters, stretch = 2.2, crossfadeSec = 0.12) {
   return out;
 }
 
-async function playBlend(letters, stretch = 2.2) {
+async function playBlend(letters) {
   const ctx = audioCtx();
-  const buf = await buildBlendBuffer(letters, stretch);
+  const buf = await buildBlendBuffer(letters);
   const src = ctx.createBufferSource();
   src.buffer = buf;
   src.connect(ctx.destination);
@@ -375,11 +328,11 @@ blendBtn.addEventListener('click', async () => {
   blendStatus.textContent = '🔗 拼讀中（無縫）...';
 
   // Highlight letters while the blended track plays
-  const blendPromise = playBlend(letters, 1.8);
+  const blendPromise = playBlend(letters);
   const dur = await (async () => {
     const bufs = await Promise.all(letters.map(l => getBuffer(l)));
-    const parts = bufs.map(b => { const t = trimRange(b); return (t.end - t.start) * 1.8; });
-    return parts.reduce((s, d) => s + d, 0) - 0.12 * (letters.length - 1);
+    const parts = bufs.map(b => { const t = trimRange(b); return t.end - t.start; });
+    return parts.reduce((s, d) => s + d, 0) - 0.15 * (letters.length - 1);
   })();
 
   // Animate chips at roughly even intervals
