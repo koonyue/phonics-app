@@ -26,354 +26,149 @@ h1 { text-align: center; font-size: 2.5em; color: #6b35b3; text-shadow: 2px 2px 
 .letter-btn.playing { background: #ffd700; border-color: #ff6b6b; transform: scale(1.15); }
 .letter-btn.vowel { background: linear-gradient(145deg, #ffe0f0, #ffd0e0); color: #e84393; }
 
-.blend-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-.blend-input { flex: 1; min-width: 200px; padding: 12px 16px; font-size: 1.4em; border: 3px solid #ddd; border-radius: 12px; outline: none; text-transform: uppercase; text-align: center; letter-spacing: 2px; }
-.blend-input:focus { border-color: #6c5ce7; }
-.blend-btn { padding: 12px 30px; font-size: 1.3em; font-weight: bold; border: none; border-radius: 12px; background: linear-gradient(135deg, #6c5ce7, #a29bfe); color: white; cursor: pointer; box-shadow: 0 3px 8px rgba(0,0,0,0.15); transition: all 0.15s; }
-.blend-btn:hover { transform: scale(1.05); }
-.blend-btn.playing { background: linear-gradient(135deg, #fd79a8, #e84393); }
-.word-btn { background: linear-gradient(135deg, #00b894, #55efc4); }
-.word-btn:hover { background: linear-gradient(135deg, #00a381, #4ae0b5); }
+.word-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 10px; }
+.word-btn { padding: 14px 8px; border: 3px solid #a29bfe; border-radius: 12px; background: linear-gradient(145deg, #fff, #f0e8ff); font-size: 1.3em; font-weight: bold; color: #6b35b3; cursor: pointer; transition: all 0.15s; text-align: center; text-transform: uppercase; box-shadow: 0 3px 6px rgba(0,0,0,0.1); }
+.word-btn:hover { transform: scale(1.08); border-color: #6c5ce7; background: #dfe6fd; }
+.word-btn:active { transform: scale(0.95); background: #a29bfe; color: #fff; }
+.word-btn.playing { background: #6c5ce7; color: #fff; border-color: #4a3db7; }
 
-.letter-display { display: flex; gap: 8px; margin: 15px 0; flex-wrap: wrap; justify-content: center; }
-.letter-chip { background: #ffeaa7; border: 2px solid #fdcb6e; border-radius: 10px; padding: 8px 12px; font-size: 1.3em; font-weight: bold; color: #6b35b3; transition: all 0.2s; }
-.letter-chip.active { background: #ffd700; border-color: #ff6b6b; transform: scale(1.15); }
-.result-word { text-align: center; font-size: 2em; font-weight: bold; color: #00b894; margin-top: 10px; }
+.custom-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 15px; }
+.custom-input { flex: 1; min-width: 200px; padding: 12px 16px; font-size: 1.4em; border: 3px solid #a29bfe; border-radius: 12px; outline: none; text-transform: lowercase; text-align: center; }
+.read-btn { padding: 12px 28px; background: #00b894; color: white; border: none; border-radius: 12px; font-size: 1.3em; font-weight: bold; cursor: pointer; transition: all 0.15s; box-shadow: 0 3px 6px rgba(0,0,0,0.15); }
+.read-btn:hover { background: #00a381; transform: scale(1.05); }
+.read-btn:active { background: #008966; transform: scale(0.95); }
 
-.speed-row { display: flex; gap: 10px; justify-content: center; margin: 10px 0; flex-wrap: wrap; align-items: center; }
-.speed-btn, .blend-speed-btn { padding: 8px 16px; border: 2px solid #ddd; border-radius: 8px; background: #fff; font-size: 1em; cursor: pointer; transition: all 0.15s; }
-.speed-btn.active, .blend-speed-btn.active { background: #6c5ce7; color: white; border-color: #6c5ce7; }
-
-.status { text-align: center; color: #888; font-size: 0.9em; margin-top: 10px; }
-
-@media (max-width: 500px) {
-  h1 { font-size: 1.8em; }
-  .letter-grid { grid-template-columns: repeat(auto-fill, minmax(48px, 1fr)); gap: 6px; }
-  .letter-btn { font-size: 1.3em; border-radius: 10px; }
-}
+.status { text-align: center; color: #888; font-size: 0.9em; margin-top: 10px; min-height: 20px; }
+.source-tag { text-align: center; color: #aaa; font-size: 0.75em; margin-top: 5px; }
 </style>
 </head>
 <body>
 <div class="container">
 
 <h1>🌈 Phonics Fun</h1>
-<p class="subtitle">撳字母聽發音 · 輸入詞語學拼讀 <span style="color:#aaa;font-size:0.65em;">🇬🇧 v7.2 (真人錄音 · 核心提取)</span></p>
+<p class="subtitle">撳字母聽發音 · UK男聲讀字 <span style="color:#aaa;font-size:0.65em;">🇬🇧 v8.0</span></p>
 
 <!-- Letter Sounds -->
 <div class="section">
-  <h2>🔤 單個字母發音</h2>
+  <h2>🔤 字母發音</h2>
   <div class="letter-grid" id="letterGrid"></div>
-  <p class="status" id="letterStatus">撳任何字母聽發音 🔊</p>
+  <div class="status" id="letterStatus"></div>
 </div>
 
-<!-- Blending -->
+<!-- Whole Words -->
 <div class="section">
-  <h2>🔗 拼讀練習 (Blending)</h2>
-  <div class="speed-row">
-    <span style="color:#666;">字母語速:</span>
-    <button class="speed-btn" data-speed="1.6">🐢 慢</button>
-    <button class="speed-btn active" data-speed="1.0">🚶 正常</button>
-    <button class="speed-btn" data-speed="0.6">🐇 快</button>
+  <h2>📖 讀字 (UK男聲)</h2>
+  <div class="word-grid" id="wordGrid"></div>
+  <div class="custom-row">
+    <input type="text" class="custom-input" id="customInput" placeholder="自訂詞語, e.g. butterfly" maxlength="30">
+    <button class="read-btn" id="customReadBtn">🔊 讀字</button>
   </div>
-  <div class="speed-row">
-    <span style="color:#666;">拼讀慢速:</span>
-    <button class="blend-speed-btn active" data-mult="2">2×</button>
-    <button class="blend-speed-btn" data-mult="3">3×</button>
-    <button class="blend-speed-btn" data-mult="4">4×</button>
-  </div>
-  <div class="blend-row">
-    <input type="text" class="blend-input" id="blendInput" placeholder="輸入英文詞語, e.g. CAT" maxlength="15">
-    <button class="blend-btn" id="blendBtn">🔊 拼讀</button>
-    <button class="blend-btn word-btn" id="wordBtn">📖 讀字</button>
-  </div>
-  <div class="letter-display" id="letterDisplay"></div>
-  <div class="result-word" id="resultWord"></div>
-  <p class="status" id="blendStatus">試下輸入 CAT / DOG / FISH</p>
+  <div class="status" id="wordStatus"></div>
+  <div class="source-tag">真人錄音: 🇬🇧 Ryan (Microsoft Neural) · 自訂: Browser UK TTS</div>
 </div>
 
 </div>
 
 <script>
-// ─── Audio cache ──────────────────────────────────
-const audioCache = {};
 const vowels = new Set(['A','E','I','O','U']);
-let playing = false;
-let gap = 500; // ms between letters during blend (adjusted by speed)
 
-function getAudio(letter) {
-  const l = letter.toLowerCase();
-  if (!audioCache[l]) {
-    audioCache[l] = new Audio(`sounds/${l}.mp3`);
-    audioCache[l].preload = 'auto';
-  }
-  return audioCache[l];
-}
-
-function playSound(letter) {
-  return new Promise((resolve) => {
-    const audio = getAudio(letter);
-    audio.playbackRate = 1.0;
-    audio.currentTime = 0;
-    audio.onended = resolve;
-    audio.onerror = resolve;
-    audio.play().catch(resolve);
-  });
-}
-
-function playSoundStretched(letter) {
-  return new Promise((resolve) => {
-    const audio = getAudio(letter);
-    // playbackRate < 1 = slower + longer, pitch stays natural with preservesPitch
-    audio.playbackRate = 0.45;
-    audio.currentTime = 0;
-    audio.onended = resolve;
-    audio.onerror = resolve;
-    audio.play().catch(resolve);
-  });
-}
-
-// ─── Web Audio: seamless blended playback ──────────
-// Decode all letter MP3s, trim silence, crossfade into ONE continuous
-// audio buffer with SoundTouch time-stretch (pitch-preserving).
-// This avoids the gaps/clicks of separate <audio> elements.
-
-let _audioCtx = null;
-function audioCtx() {
-  if (!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  if (_audioCtx.state === 'suspended') _audioCtx.resume();
-  return _audioCtx;
-}
-
-const _bufferCache = {};
-let blendSpeed = 2; // default blend speed multiplier
-
-async function getBuffer(letter, slow = false) {
-  const key = (slow ? `slow${blendSpeed}_` : '') + letter.toLowerCase();
-  if (_bufferCache[key]) return _bufferCache[key];
-  const path = slow ? `sounds/slow${blendSpeed}/${letter.toLowerCase()}.mp3` : `sounds/${letter.toLowerCase()}.mp3`;
-  const resp = await fetch(path);
-  const arr = await resp.arrayBuffer();
-  const buf = await audioCtx().decodeAudioData(arr);
-  _bufferCache[key] = buf;
-  return buf;
-}
-
-// Trim leading/trailing silence from a buffer, return {start, end} in seconds
-function trimRange(buf, threshDb = -40) {
-  const data = buf.getChannelData(0);
-  const sr = buf.sampleRate;
-  const thresh = Math.pow(10, threshDb / 20);
-  let start = 0, end = data.length - 1;
-  while (start < data.length && Math.abs(data[start]) < thresh) start++;
-  while (end > start && Math.abs(data[end]) < thresh) end--;
-  return { start: start / sr, end: end / sr };
-}
-
-// Build one continuous AudioBuffer from SLOW (0.5x, pitch-preserved) letter
-// sounds — one after another with crossfade for natural transition.
-async function buildBlendBuffer(letters, crossfadeSec = 0.1) {
-  const ctx = audioCtx();
-  const bufs = await Promise.all(letters.map(l => getBuffer(l, true))); // slow versions
-
-  // Trim each buffer (no repeat, no stretch — already slow)
-  const parts = bufs.map(b => {
-    const t = trimRange(b);
-    const s = Math.floor(t.start * b.sampleRate);
-    const e = Math.floor(t.end * b.sampleRate);
-    return { data: b.getChannelData(0).slice(s, e), sr: b.sampleRate };
-  });
-
-  const sr = ctx.sampleRate;
-  const xfadeLen = Math.floor(crossfadeSec * sr);
-  const totalLen = parts.reduce((s, p) => s + p.data.length, 0) - xfadeLen * (parts.length - 1);
-  const out = ctx.createBuffer(1, totalLen, sr);
-  const ch = out.getChannelData(0);
-
-  let offset = 0;
-  for (let i = 0; i < parts.length; i++) {
-    const p = parts[i];
-    const overlap = i < parts.length - 1 ? xfadeLen : 0;
-    for (let j = 0; j < p.data.length && offset + j < ch.length; j++) {
-      let sample = p.data[j];
-      if (overlap > 0 && j >= p.data.length - overlap) {
-        sample *= 1 - (j - (p.data.length - overlap)) / overlap;
-      }
-      if (i > 0 && j < xfadeLen) {
-        sample *= j / xfadeLen;
-      }
-      ch[offset + j] += sample;
-    }
-    offset += p.data.length - overlap;
-  }
-
-  let peak = 0;
-  for (let i = 0; i < ch.length; i++) peak = Math.max(peak, Math.abs(ch[i]));
-  if (peak > 0) for (let i = 0; i < ch.length; i++) ch[i] /= peak;
-
-  return out;
-}
-
-async function playBlend(letters) {
-  const ctx = audioCtx();
-  const buf = await buildBlendBuffer(letters);
-  const src = ctx.createBufferSource();
-  src.buffer = buf;
-  src.connect(ctx.destination);
-  return new Promise(resolve => {
-    src.onended = resolve;
-    src.start();
-  });
-}
-
-function speakWord(word) {
-  return new Promise((resolve) => {
-    // lowercase so TTS reads it as a word, not letter names
-    const utter = new SpeechSynthesisUtterance(word.toLowerCase());
-    utter.lang = 'en-GB';
-    utter.rate = 0.8;
-    utter.pitch = 1.1;
-    utter.onend = resolve;
-    utter.onerror = resolve;
-    speechSynthesis.speak(utter);
-  });
-}
-
-// ─── Speed ─────────────────────────────────────────
-document.querySelectorAll('.speed-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    gap = 500 * parseFloat(btn.dataset.speed);
-  });
-});
-
-// ─── Blend speed ───────────────────────────────────
-document.querySelectorAll('.blend-speed-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.blend-speed-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    blendSpeed = parseInt(btn.dataset.mult);
-  });
-});
+// ─── Pre-generated UK male words (edge-tts en-GB-RyanNeural) ───
+const preWords = ["cat","dog","sit","tap","red","big","fun","hat","jam","kid","leg","man","not","pen","run","sun","top","van","wet","yes","zip","bed","cup","fox","get","hop","lip","mud","nap","pig","rat","sad"];
 
 // ─── Letter Grid ───────────────────────────────────
 const letterGrid = document.getElementById('letterGrid');
 const letterStatus = document.getElementById('letterStatus');
 
-for (const letter of 'ABCDEFGHIJKLMNOPQRSTUVWXYZ') {
+for (let i = 0; i < 26; i++) {
+  const letter = String.fromCharCode(65 + i);
   const btn = document.createElement('button');
-  btn.className = 'letter-btn';
-  if (vowels.has(letter)) btn.classList.add('vowel');
+  btn.className = 'letter-btn' + (vowels.has(letter) ? ' vowel' : '');
   btn.textContent = letter;
-  btn.addEventListener('click', async () => {
-    if (playing) return;
-    playing = true;
-    btn.classList.add('playing');
-    letterStatus.textContent = `🔊 ${letter}`;
-    await playSound(letter);
-    btn.classList.remove('playing');
-    letterStatus.textContent = '撳任何字母聽發音 🔊';
-    playing = false;
+  btn.addEventListener('click', () => {
+    playLetter(letter, btn);
   });
   letterGrid.appendChild(btn);
 }
 
-// ─── Blending ──────────────────────────────────────
-const blendInput = document.getElementById('blendInput');
-const blendBtn = document.getElementById('blendBtn');
-const wordBtn = document.getElementById('wordBtn');
-const letterDisplay = document.getElementById('letterDisplay');
-const resultWord = document.getElementById('resultWord');
-const blendStatus = document.getElementById('blendStatus');
-
-function getWord() {
-  const word = blendInput.value.trim().toUpperCase();
-  if (!word) { blendStatus.textContent = '請輸入一個英文詞語'; return null; }
-  if (!/^[A-Z]+$/.test(word)) { blendStatus.textContent = '只可以輸入英文字母 A-Z'; return null; }
-  return word;
+function playLetter(letter, btn) {
+  document.querySelectorAll('.playing').forEach(b => b.classList.remove('playing'));
+  const audio = new Audio(`sounds/${letter.toLowerCase()}.mp3`);
+  btn.classList.add('playing');
+  letterStatus.textContent = `🔊 ${letter}`;
+  audio.play();
+  audio.onended = () => {
+    btn.classList.remove('playing');
+    letterStatus.textContent = '';
+  };
+  audio.onerror = () => {
+    btn.classList.remove('playing');
+    letterStatus.textContent = '⚠️ 錄音未載入';
+  };
 }
 
-// 📖 讀字制：淨係讀成個詞語
-wordBtn.addEventListener('click', async () => {
-  const word = getWord();
-  if (!word || playing) return;
-  playing = true;
-  wordBtn.classList.add('playing');
-  resultWord.textContent = word;
-  blendStatus.textContent = '📖 讀出詞語...';
-  await speakWord(word);
-  blendStatus.textContent = `✅ 「${word}」`;
-  wordBtn.classList.remove('playing');
-  playing = false;
+// ─── Word Grid + Custom Input ───────────────────────
+const wordGrid = document.getElementById('wordGrid');
+const wordStatus = document.getElementById('wordStatus');
+const customInput = document.getElementById('customInput');
+const customReadBtn = document.getElementById('customReadBtn');
+
+// Build word buttons
+for (const w of preWords) {
+  const btn = document.createElement('button');
+  btn.className = 'word-btn';
+  btn.textContent = w;
+  btn.addEventListener('click', () => readWord(w, btn));
+  wordGrid.appendChild(btn);
+}
+
+// Custom word button
+customReadBtn.addEventListener('click', () => {
+  const word = customInput.value.trim().toLowerCase();
+  if (!word || !/^[a-z]+$/.test(word)) return;
+  readCustom(word);
 });
-
-// 🔊 拼讀制：逐個 phonic 音 + blend（唔讀成個字）
-blendInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') blendBtn.click(); });
-
-blendBtn.addEventListener('click', async () => {
-  const word = getWord();
-  if (!word) return;
-  if (playing) { blendStatus.textContent = '請等讀完再試'; return; }
-
-  playing = true;
-  blendBtn.classList.add('playing');
-  letterDisplay.innerHTML = '';
-  resultWord.textContent = '';
-
-  const letters = word.split('');
-  letters.forEach(l => {
-    const chip = document.createElement('span');
-    chip.className = 'letter-chip';
-    chip.textContent = l;
-    letterDisplay.appendChild(chip);
-  });
-
-  // Phase 1: Play each letter's phonics MP3, slowly
-  blendStatus.textContent = '🔊 逐個字母發音...';
-  for (let i = 0; i < letters.length; i++) {
-    letterDisplay.children[i].classList.add('active');
-    await playSound(letters[i]);
-    letterDisplay.children[i].classList.remove('active');
-    if (i < letters.length - 1) await new Promise(r => setTimeout(r, gap));
-  }
-
-  // Phase 2: Blend — seamless stretched audio via Web Audio API
-  await new Promise(r => setTimeout(r, 600));
-  blendStatus.textContent = '🔗 拼讀中（無縫）...';
-
-  // Highlight letters while the blended track plays
-  const blendPromise = playBlend(letters);
-  const dur = await (async () => {
-    const bufs = await Promise.all(letters.map(l => getBuffer(l, true)));
-    const parts = bufs.map(b => { const t = trimRange(b); return t.end - t.start; });
-    return parts.reduce((s, d) => s + d, 0) - 0.1 * (letters.length - 1);
-  })();
-
-  // Animate chips at roughly even intervals
-  const chipInterval = dur / letters.length;
-  for (let i = 0; i < letters.length; i++) {
-    letterDisplay.children[i].classList.add('active');
-    setTimeout(((idx) => () => letterDisplay.children[idx].classList.remove('active'))(i), (i + 1) * chipInterval * 1000);
-  }
-
-  await blendPromise;
-
-  blendStatus.textContent = `✅ 拼讀完成！撳 📖 聽成個字`;
-  blendBtn.classList.remove('playing');
-  playing = false;
-});
-
-// ─── Keyboard shortcuts ────────────────────────────
-document.addEventListener('keydown', (e) => {
-  if (document.activeElement === blendInput) return;
-  const key = e.key.toUpperCase();
-  if (key >= 'A' && key <= 'Z') {
-    const btn = Array.from(letterGrid.children).find(b => b.textContent === key);
-    if (btn) btn.click();
+customInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    const word = customInput.value.trim().toLowerCase();
+    if (word && /^[a-z]+$/.test(word)) readCustom(word);
   }
 });
 
-blendInput.focus();
+function readWord(word, btn) {
+  document.querySelectorAll('.playing').forEach(b => b.classList.remove('playing'));
+  if (btn) btn.classList.add('playing');
+  wordStatus.textContent = `📖 "${word}"`;
+  const audio = new Audio(`sounds/words/${word}.mp3`);
+  audio.play();
+  audio.onended = () => {
+    if (btn) btn.classList.remove('playing');
+    wordStatus.textContent = '';
+  };
+  audio.onerror = () => {
+    // Fallback to browser TTS
+    readCustom(word);
+    if (btn) btn.classList.remove('playing');
+  };
+}
+
+function readCustom(word) {
+  document.querySelectorAll('.playing').forEach(b => b.classList.remove('playing'));
+  wordStatus.textContent = `📖 "${word}" (TTS)`;
+  const utter = new SpeechSynthesisUtterance(word);
+  utter.lang = 'en-GB';
+  utter.rate = 0.85;
+  // Try to select a UK male voice
+  const voices = speechSynthesis.getVoices();
+  const ukMale = voices.find(v => v.lang.startsWith('en-GB') && v.name.toLowerCase().includes('male')) ||
+                 voices.find(v => v.lang.startsWith('en-GB'));
+  if (ukMale) utter.voice = ukMale;
+  utter.onend = () => { wordStatus.textContent = ''; };
+  speechSynthesis.speak(utter);
+}
+
+// Pre-load voices
+speechSynthesis.getVoices();
+speechSynthesis.onvoiceschanged = () => speechSynthesis.getVoices();
 </script>
 </body>
 </html>
