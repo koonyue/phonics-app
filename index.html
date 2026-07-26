@@ -57,7 +57,7 @@ h1 { text-align: center; font-size: 2.5em; color: #6b35b3; text-shadow: 2px 2px 
 <div class="container">
 
 <h1>🌈 Phonics Fun</h1>
-<p class="subtitle">撳字母聽發音 · 輸入詞語學拼讀 <span style="color:#aaa;font-size:0.65em;">🇬🇧 v5.0 (真人錄音 · 高質慢拼讀)</span></p>
+<p class="subtitle">撳字母聽發音 · 輸入詞語學拼讀 <span style="color:#aaa;font-size:0.65em;">🇬🇧 v5.1 (真人錄音 · 高質慢拼讀)</span></p>
 
 <!-- Letter Sounds -->
 <div class="section">
@@ -77,10 +77,8 @@ h1 { text-align: center; font-size: 2.5em; color: #6b35b3; text-shadow: 2px 2px 
   </div>
   <div class="speed-row">
     <span style="color:#666;">拼讀慢速:</span>
-    <button class="blend-speed-btn" data-mult="8">8×</button>
-    <button class="blend-speed-btn active" data-mult="16">16×</button>
-    <button class="blend-speed-btn" data-mult="32">32×</button>
-    <button class="blend-speed-btn" data-mult="64">64×</button>
+    <button class="blend-speed-btn active" data-mult="2">2×</button>
+    <button class="blend-speed-btn" data-mult="4">4×</button>
   </div>
   <div class="blend-row">
     <input type="text" class="blend-input" id="blendInput" placeholder="輸入英文詞語, e.g. CAT" maxlength="15">
@@ -146,7 +144,7 @@ function audioCtx() {
 }
 
 const _bufferCache = {};
-let blendSpeed = 16; // default blend speed multiplier
+let blendSpeed = 2; // default blend speed multiplier
 
 async function getBuffer(letter, slow = false) {
   const key = (slow ? `slow${blendSpeed}_` : '') + letter.toLowerCase();
