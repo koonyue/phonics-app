@@ -41,8 +41,8 @@ h1 { text-align: center; font-size: 2.5em; color: #6b35b3; text-shadow: 2px 2px 
 .result-word { text-align: center; font-size: 2em; font-weight: bold; color: #00b894; margin-top: 10px; }
 
 .speed-row { display: flex; gap: 10px; justify-content: center; margin: 10px 0; flex-wrap: wrap; align-items: center; }
-.speed-btn { padding: 8px 16px; border: 2px solid #ddd; border-radius: 8px; background: #fff; font-size: 1em; cursor: pointer; transition: all 0.15s; }
-.speed-btn.active { background: #6c5ce7; color: white; border-color: #6c5ce7; }
+.speed-btn, .blend-speed-btn { padding: 8px 16px; border: 2px solid #ddd; border-radius: 8px; background: #fff; font-size: 1em; cursor: pointer; transition: all 0.15s; }
+.speed-btn.active, .blend-speed-btn.active { background: #6c5ce7; color: white; border-color: #6c5ce7; }
 
 .status { text-align: center; color: #888; font-size: 0.9em; margin-top: 10px; }
 
@@ -57,7 +57,7 @@ h1 { text-align: center; font-size: 2.5em; color: #6b35b3; text-shadow: 2px 2px 
 <div class="container">
 
 <h1>🌈 Phonics Fun</h1>
-<p class="subtitle">撳字母聽發音 · 輸入詞語學拼讀 <span style="color:#aaa;font-size:0.65em;">🇬🇧 v4.8 (真人錄音 · 16倍慢拼讀)</span></p>
+<p class="subtitle">撳字母聽發音 · 輸入詞語學拼讀 <span style="color:#aaa;font-size:0.65em;">🇬🇧 v4.9 (真人錄音 · 8-64倍慢拼讀)</span></p>
 
 <!-- Letter Sounds -->
 <div class="section">
@@ -70,10 +70,17 @@ h1 { text-align: center; font-size: 2.5em; color: #6b35b3; text-shadow: 2px 2px 
 <div class="section">
   <h2>🔗 拼讀練習 (Blending)</h2>
   <div class="speed-row">
-    <span style="color:#666;">語速:</span>
+    <span style="color:#666;">字母語速:</span>
     <button class="speed-btn" data-speed="1.6">🐢 慢</button>
     <button class="speed-btn active" data-speed="1.0">🚶 正常</button>
     <button class="speed-btn" data-speed="0.6">🐇 快</button>
+  </div>
+  <div class="speed-row">
+    <span style="color:#666;">拼讀慢速:</span>
+    <button class="blend-speed-btn" data-mult="8">8×</button>
+    <button class="blend-speed-btn active" data-mult="16">16×</button>
+    <button class="blend-speed-btn" data-mult="32">32×</button>
+    <button class="blend-speed-btn" data-mult="64">64×</button>
   </div>
   <div class="blend-row">
     <input type="text" class="blend-input" id="blendInput" placeholder="輸入英文詞語, e.g. CAT" maxlength="15">
@@ -139,10 +146,12 @@ function audioCtx() {
 }
 
 const _bufferCache = {};
+let blendSpeed = 16; // default blend speed multiplier
+
 async function getBuffer(letter, slow = false) {
-  const key = (slow ? 'slow_' : '') + letter.toLowerCase();
+  const key = (slow ? `slow${blendSpeed}_` : '') + letter.toLowerCase();
   if (_bufferCache[key]) return _bufferCache[key];
-  const path = slow ? `sounds/slow/${letter.toLowerCase()}.mp3` : `sounds/${letter.toLowerCase()}.mp3`;
+  const path = slow ? `sounds/slow${blendSpeed}/${letter.toLowerCase()}.mp3` : `sounds/${letter.toLowerCase()}.mp3`;
   const resp = await fetch(path);
   const arr = await resp.arrayBuffer();
   const buf = await audioCtx().decodeAudioData(arr);
@@ -236,6 +245,15 @@ document.querySelectorAll('.speed-btn').forEach(btn => {
     document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     gap = 500 * parseFloat(btn.dataset.speed);
+  });
+});
+
+// ─── Blend speed ───────────────────────────────────
+document.querySelectorAll('.blend-speed-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.blend-speed-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    blendSpeed = parseInt(btn.dataset.mult);
   });
 });
 
