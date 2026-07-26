@@ -32,6 +32,8 @@ h1 { text-align: center; font-size: 2.5em; color: #6b35b3; text-shadow: 2px 2px 
 .blend-btn { padding: 12px 30px; font-size: 1.3em; font-weight: bold; border: none; border-radius: 12px; background: linear-gradient(135deg, #6c5ce7, #a29bfe); color: white; cursor: pointer; box-shadow: 0 3px 8px rgba(0,0,0,0.15); transition: all 0.15s; }
 .blend-btn:hover { transform: scale(1.05); }
 .blend-btn.playing { background: linear-gradient(135deg, #fd79a8, #e84393); }
+.word-btn { background: linear-gradient(135deg, #00b894, #55efc4); }
+.word-btn:hover { background: linear-gradient(135deg, #00a381, #4ae0b5); }
 
 .letter-display { display: flex; gap: 8px; margin: 15px 0; flex-wrap: wrap; justify-content: center; }
 .letter-chip { background: #ffeaa7; border: 2px solid #fdcb6e; border-radius: 10px; padding: 8px 12px; font-size: 1.3em; font-weight: bold; color: #6b35b3; transition: all 0.2s; }
@@ -55,7 +57,7 @@ h1 { text-align: center; font-size: 2.5em; color: #6b35b3; text-shadow: 2px 2px 
 <div class="container">
 
 <h1>🌈 Phonics Fun</h1>
-<p class="subtitle">撳字母聽發音 · 輸入詞語學拼讀 <span style="color:#aaa;font-size:0.65em;">🇬🇧 v3.3 (真人錄音)</span></p>
+<p class="subtitle">撳字母聽發音 · 輸入詞語學拼讀 <span style="color:#aaa;font-size:0.65em;">🇬🇧 v3.4 (真人錄音)</span></p>
 
 <!-- Letter Sounds -->
 <div class="section">
@@ -76,6 +78,7 @@ h1 { text-align: center; font-size: 2.5em; color: #6b35b3; text-shadow: 2px 2px 
   <div class="blend-row">
     <input type="text" class="blend-input" id="blendInput" placeholder="輸入英文詞語, e.g. CAT" maxlength="15">
     <button class="blend-btn" id="blendBtn">🔊 拼讀</button>
+    <button class="blend-btn word-btn" id="wordBtn">📖 讀字</button>
   </div>
   <div class="letter-display" id="letterDisplay"></div>
   <div class="result-word" id="resultWord"></div>
@@ -170,16 +173,38 @@ for (const letter of 'ABCDEFGHIJKLMNOPQRSTUVWXYZ') {
 // ─── Blending ──────────────────────────────────────
 const blendInput = document.getElementById('blendInput');
 const blendBtn = document.getElementById('blendBtn');
+const wordBtn = document.getElementById('wordBtn');
 const letterDisplay = document.getElementById('letterDisplay');
 const resultWord = document.getElementById('resultWord');
 const blendStatus = document.getElementById('blendStatus');
 
+function getWord() {
+  const word = blendInput.value.trim().toUpperCase();
+  if (!word) { blendStatus.textContent = '請輸入一個英文詞語'; return null; }
+  if (!/^[A-Z]+$/.test(word)) { blendStatus.textContent = '只可以輸入英文字母 A-Z'; return null; }
+  return word;
+}
+
+// 📖 讀字制：淨係讀成個詞語
+wordBtn.addEventListener('click', async () => {
+  const word = getWord();
+  if (!word || playing) return;
+  playing = true;
+  wordBtn.classList.add('playing');
+  resultWord.textContent = word;
+  blendStatus.textContent = '📖 讀出詞語...';
+  await speakWord(word);
+  blendStatus.textContent = `✅ 「${word}」`;
+  wordBtn.classList.remove('playing');
+  playing = false;
+});
+
+// 🔊 拼讀制：逐個 phonic 音 + blend（唔讀成個字）
 blendInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') blendBtn.click(); });
 
 blendBtn.addEventListener('click', async () => {
-  const word = blendInput.value.trim().toUpperCase();
-  if (!word) { blendStatus.textContent = '請輸入一個英文詞語'; return; }
-  if (!/^[A-Z]+$/.test(word)) { blendStatus.textContent = '只可以輸入英文字母 A-Z'; return; }
+  const word = getWord();
+  if (!word) return;
   if (playing) { blendStatus.textContent = '請等讀完再試'; return; }
 
   playing = true;
@@ -204,26 +229,16 @@ blendBtn.addEventListener('click', async () => {
     if (i < letters.length - 1) await new Promise(r => setTimeout(r, gap));
   }
 
-  // Phase 2: Blend — stretch each sound (slow playback), overlap gaps so they merge
+  // Phase 2: Blend — stretch each sound (slow playback), zero gap
   await new Promise(r => setTimeout(r, 600));
   blendStatus.textContent = '🔗 拉長拼讀中...';
   for (let i = 0; i < letters.length; i++) {
     letterDisplay.children[i].classList.add('active');
     await playSoundStretched(letters[i]);
     letterDisplay.children[i].classList.remove('active');
-    // zero gap — sounds flow directly into each other
-    if (i < letters.length - 1) {
-      // no pause
-    }
   }
 
-  // Phase 3: Say the full word with UK voice
-  await new Promise(r => setTimeout(r, 500));
-  blendStatus.textContent = '📖 完整讀出:';
-  resultWord.textContent = word;
-  await speakWord(word);
-
-  blendStatus.textContent = `✅ 完成！「${word}」`;
+  blendStatus.textContent = `✅ 拼讀完成！撳 📖 聽成個字`;
   blendBtn.classList.remove('playing');
   playing = false;
 });
