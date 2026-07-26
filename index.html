@@ -57,7 +57,7 @@ h1 { text-align: center; font-size: 2.5em; color: #6b35b3; text-shadow: 2px 2px 
 <div class="container">
 
 <h1>🌈 Phonics Fun</h1>
-<p class="subtitle">撳字母聽發音 · 輸入詞語學拼讀 <span style="color:#aaa;font-size:0.65em;">🇬🇧 v3.8 (真人錄音 · 無縫拼讀)</span></p>
+<p class="subtitle">撳字母聽發音 · 輸入詞語學拼讀 <span style="color:#aaa;font-size:0.65em;">🇬🇧 v3.9 (真人錄音 · 無縫拼讀)</span></p>
 
 <!-- Letter Sounds -->
 <div class="section">
@@ -88,7 +88,7 @@ h1 { text-align: center; font-size: 2.5em; color: #6b35b3; text-shadow: 2px 2px 
 </div>
 
 <script type="module">
-import { SoundTouch, SimpleFilter } from './soundtouch.js';
+import { SoundTouch, WebAudioBufferSource, SimpleFilter } from './soundtouch.js';
 // ─── Audio cache ──────────────────────────────────
 const audioCache = {};
 const vowels = new Set(['A','E','I','O','U']);
@@ -162,37 +162,25 @@ function trimRange(buf, threshDb = -40) {
 }
 
 // Stretch a trimmed buffer segment using SoundTouch (pitch-preserving).
-// Returns Float32Array mono samples at natural pitch but stretched duration.
+// Uses the library's own WebAudioBufferSource + SimpleFilter pipeline.
 function stretchWithSoundTouch(buf, start, end, stretch) {
   const sr = buf.sampleRate;
   const s = Math.floor(start * sr), e = Math.floor(end * sr);
-  const src = buf.getChannelData(0).slice(s, e);
+  const frames = e - s;
 
-  // SoundTouch expects stereo interleaved input
-  const interleaved = new Float32Array(src.length * 2);
-  for (let i = 0; i < src.length; i++) {
-    interleaved[i * 2] = src[i];
-    interleaved[i * 2 + 1] = src[i];
-  }
+  // Create a mono AudioBuffer from the trimmed segment
+  const ctx = audioCtx();
+  const segBuf = ctx.createBuffer(1, frames, sr);
+  segBuf.getChannelData(0).set(buf.getChannelData(0).slice(s, e));
 
-  const st = new SoundTouch(sr);
+  // SoundTouch pipeline: WebAudioBufferSource → SoundTouch → SimpleFilter
+  const st = new SoundTouch();
   st.tempo = 1 / stretch; // tempo < 1 = slower = longer
-
-  const source = {
-    pos: 0,
-    extract(target, numFrames, position) {
-      // position is in frames from the start of the source
-      const p = position !== undefined ? position : this.pos;
-      const avail = src.length - p;
-      const n = Math.min(numFrames, Math.max(avail, 0));
-      for (let i = 0; i < n * 2; i++) target[i] = interleaved[p * 2 + i];
-      if (position === undefined) this.pos += n;
-      return n;
-    }
-  };
+  const source = new WebAudioBufferSource(segBuf);
   const filter = new SimpleFilter(source, st);
 
-  const maxOut = Math.ceil(src.length * stretch * 1.5) * 2;
+  // Extract all output frames
+  const maxOut = Math.ceil(frames * stretch * 2) * 2;
   const out = new Float32Array(maxOut);
   const chunk = new Float32Array(4096 * 2);
   let written = 0;
@@ -203,10 +191,10 @@ function stretchWithSoundTouch(buf, start, end, stretch) {
     written += n * 2;
   }
 
-  // De-interleave to mono (left channel)
-  const frames = Math.floor(written / 2);
-  const mono = new Float32Array(frames);
-  for (let i = 0; i < frames; i++) mono[i] = out[i * 2];
+  // De-interleave stereo to mono
+  const outFrames = Math.floor(written / 2);
+  const mono = new Float32Array(outFrames);
+  for (let i = 0; i < outFrames; i++) mono[i] = out[i * 2];
   return mono;
 }
 
