@@ -55,7 +55,7 @@ h1 { text-align: center; font-size: 2.5em; color: #6b35b3; text-shadow: 2px 2px 
 <div class="container">
 
 <h1>🌈 Phonics Fun</h1>
-<p class="subtitle">撳字母聽發音 · 輸入詞語學拼讀 <span style="color:#aaa;font-size:0.65em;">🇬🇧 v2.2 (真人發音)</span></p>
+<p class="subtitle">撳字母聽發音 · 輸入詞語學拼讀 <span style="color:#aaa;font-size:0.65em;">🇬🇧 v3.1 (真人錄音)</span></p>
 
 <!-- Letter Sounds -->
 <div class="section">
@@ -103,6 +103,19 @@ function getAudio(letter) {
 function playSound(letter) {
   return new Promise((resolve) => {
     const audio = getAudio(letter);
+    audio.playbackRate = 1.0;
+    audio.currentTime = 0;
+    audio.onended = resolve;
+    audio.onerror = resolve;
+    audio.play().catch(resolve);
+  });
+}
+
+function playSoundStretched(letter) {
+  return new Promise((resolve) => {
+    const audio = getAudio(letter);
+    // playbackRate < 1 = slower + longer, pitch stays natural with preservesPitch
+    audio.playbackRate = 0.65;
     audio.currentTime = 0;
     audio.onended = resolve;
     audio.onerror = resolve;
@@ -112,7 +125,8 @@ function playSound(letter) {
 
 function speakWord(word) {
   return new Promise((resolve) => {
-    const utter = new SpeechSynthesisUtterance(word);
+    // lowercase so TTS reads it as a word, not letter names
+    const utter = new SpeechSynthesisUtterance(word.toLowerCase());
     utter.lang = 'en-GB';
     utter.rate = 0.8;
     utter.pitch = 1.1;
@@ -190,14 +204,18 @@ blendBtn.addEventListener('click', async () => {
     if (i < letters.length - 1) await new Promise(r => setTimeout(r, gap));
   }
 
-  // Phase 2: Blend — same MP3s but faster gaps
+  // Phase 2: Blend — stretch each sound (slow playback), overlap gaps so they merge
   await new Promise(r => setTimeout(r, 600));
-  blendStatus.textContent = '🔗 拼讀中（加快）...';
+  blendStatus.textContent = '🔗 拉長拼讀中...';
   for (let i = 0; i < letters.length; i++) {
     letterDisplay.children[i].classList.add('active');
-    await playSound(letters[i]);
+    await playSoundStretched(letters[i]);
     letterDisplay.children[i].classList.remove('active');
-    if (i < letters.length - 1) await new Promise(r => setTimeout(r, gap * 0.4));
+    // gap shrinks each step — sounds merge together at the end
+    if (i < letters.length - 1) {
+      const shrink = Math.max(gap * 0.8 * (1 - i / letters.length), 0);
+      await new Promise(r => setTimeout(r, shrink));
+    }
   }
 
   // Phase 3: Say the full word with UK voice
